@@ -79,11 +79,11 @@ install() {
 
 	case $release in
 	  stretch|buster|bullseye|bookworm|trixie|sid|xenial|bionic|focal|jammy|noble)
-	  	packages_file="/tmp/packages_files/$distro/$release.txt"
+	  	packages_file="/tmp/overlay/packages_files/$distro/$release.txt"
 	  	install_packages "${packages_file}"
 		;;
       default)
-	    packages_file="/tmp/packages_files/$release.txt"
+	    packages_file="/tmp/overlay/packages_files/$release.txt"
 		install_packages "${packages_file}"
 		;;
 	  *)
@@ -114,7 +114,7 @@ install_packages() {
 git_repos() {
     echo -e "${RED}Console > ${NC}${CYAN} Cloning Git-Repoisotrys!"
 
-  	git_repos="/tmp/git_repos/repos.txt"
+  	git_repos="/tmp/overlay/git_repos/repos.txt"
   	if [ ! -f "$git_repos" ]; then
 	    echo "$git_repos does not exist."
 	    exit 1
