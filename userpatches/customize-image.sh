@@ -105,7 +105,7 @@ install_packages() {
   while IFS= read -r package; do
     if [[ -n "$package" ]]; then
       echo "installing $package..."
-      sudo apt-get install -y "$package"
+      apt-get install -y "$package"
     fi
   done < "$package_file"
 }
