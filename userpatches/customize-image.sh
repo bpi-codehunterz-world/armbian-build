@@ -46,6 +46,7 @@ install() {
 	local distro=$1
   	local release=$2
 
+
 	if [[ -z "$distro" || -z "$release" ]]; then
     	echo "Usage: install <distro> <release>"
     	echo "Distro: debian, ubuntu"
@@ -74,6 +75,7 @@ install() {
 
 install_packages() {
   local package_file=$1
+
   if [[ ! -f "$package_file" ]]; then
     echo "Datei $package_file nicht gefunden!"
     return 1
@@ -157,6 +159,7 @@ copy_overlay() {
 
 ############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
 clone_repositorys() {
+	apt-get install -y swig python3-dev python3-pip python3-venv git curl wget make cmake build-essential
 
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
@@ -171,21 +174,21 @@ clone_repositorys() {
 	cd BPI-WiringPi2
 	./build
 	echo -e "/usr/local/lib" >> /etc/ld.so.conf
-	sudo ldconfig
+	ldconfig
 	cd wiringPi
   	make static
-  	sudo make install-static
+  	make install-static
 	cd ..
 	cd ..
 	echo -e "INFO: Installing RPi.GPIO!"
     cd RPi.GPIO
-	sudo python3 setup.py install
-	sudo pip3 install . --break-system-packages
+	python3 setup.py install
+	pip3 install . --break-system-packages
 	cd ..
 	echo -e "INFO: Installing BPI-WiringPi2-Python!"
 	cd BPI-WiringPi2-Python
 	swig -python wiringpi.i
-	sudo python3 setup.py build install
+	python3 setup.py build install
 	cd ..
  }
 
@@ -202,57 +205,78 @@ clone_repositorys() {
 # Default gen-customize function, this function will be executed by default!"
 # Support: Debian & Ubuntu!"
 build() {
+    apt-get update;
     install "default";
 	copy_overlay;
 	clone_repositorys;
 
 }
 
-# Support: Ubuntu!" #
 build_xenial() {
+    apt-get update;
+
     install "ubuntu" "xenial";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_bionic() {
+	apt-get update;
+
     install "ubuntu" "bionic";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_focal() {
+	apt-get update;
+
     install "ubuntu" "focal";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_jammy() {
+	apt-get update;
+
     install "ubuntu" "jammy";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_noble() {
+	apt-get update;
+
     install "ubuntu" "noble";
 	copy_overlay;
 	clone_repositorys;
 }
 
-# Support: Debian!" #
 build_stretch() {
+	apt-get update;
+
     install "debian" "stretch";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_buster() {
+	apt-get update;
+
     install "debian" "buster";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_bullseye() {
+	apt-get update;
+
+	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93D6889F9F0E78D5
+	apt-get update
+    wget -qO - https://armbian.github.io/configng/KEY.gpg | sudo apt-key add -
+	apt-get update
+	apt-key update
+	apt-key net-update
     install "debian" "bullseye";
 	copy_overlay;
 	clone_repositorys;
@@ -260,12 +284,16 @@ build_bullseye() {
 }
 
 build_bookworm() {
+    apt-get update;
+
     install "debian" "bookworm";
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_trixie() {
+    apt-get update;
+
     install "debian" "trixie";
 	copy_overlay;
 	clone_repositorys;
@@ -273,20 +301,18 @@ build_trixie() {
 }
 
 build_sid() {
+    apt-get update;
+
     install "debian" "sid";
 	copy_overlay;
 	clone_repositorys;
 
 }
-# End Support: Debian END #
-
-
-
 ################## END BUILD CUSTOMIZE END ##################  END BUILD CUSTOMIZE END ################## END BUILD CUSTOMIZE END ##################
 
 
 
-##### MENU #######
+####################### MENU #################################### MENU #################################### MENU ####################################
 print_menu() {
   local title=$1
   local selected=$2
@@ -351,7 +377,11 @@ run_menu() {
         case ${options[$selected]} in
 		  # Main Menu
           "APT Installer")
-            run_menu "APT Installer" "Debian" "Ubuntu" "Back"
+            run_menu "APT Installer" "Default" "Debian" "Ubuntu" "Back"
+            ;;
+		  "Default")
+			echo "You selected: Default!"
+			build;
             ;;
           "Debian")
             run_menu "Debian" "Stretch" "Buster" "Bullseye" "Bookworm" "Trixie" "Sid" "Back"
@@ -415,7 +445,6 @@ run_menu() {
           "System-V-Init")
             echo "Choosed: System-V-Init"
 			run_menu "Integrated LED-Trigger"
-
             read -p "Press any key to continue!..."
             ;;
 			# Sub-Menu V-Init LED Trigger
@@ -470,10 +499,12 @@ run_menu() {
   done
 }
 
-# Hauptmenü ausführen
+
+
 run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init" "Systemd-Services" "Exit"
 
 
+################### END MENU ################################# END MENU #################################### END MENU ####################################
 
 
 ############## INSTALLING CUSTOM APT-PACKAGES ############# INSTALLING CUSTOM APT-PACKAGES #############  INSTALLING CUSTOM APT-PACKAGES #################################################
@@ -495,36 +526,31 @@ run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init"
 Main() {
 	case $RELEASE in
 		stretch)
-			build;
+			build_stretch;
 			;;
 		buster)
-			build;
+			build_buster;
 			;;
 		jammy)
 			build_jammy;
 			;;
 		xenial)
-			build;
+			build_xenial;
 			;;
 		bookworm)
-			build;
+			build_bookworm;
 			;;
-
 		bullseye)
-			sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93D6889F9F0E78D5
-			sudo apt-get update
-			wget -qO - https://armbian.github.io/configng/KEY.gpg | sudo apt-key add -
-			sudo apt-get update
-			build;
+			build_bullseye;
 			;;
 		bionic)
-			build;
+			build_bionic;
 			;;
 		focal)
-			build;
+			build_focal;
 			;;
 		noble)
-			build
+			build_noble;
 			;;
 	esac
 } # Main
