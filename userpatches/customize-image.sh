@@ -24,6 +24,8 @@ CYAN='\e[0;36m'
 NC='\033[0m'
 
 
+
+
 install_docker_debian() {
 	# Add Docker's official GPG key:
 	sudo apt-get update
@@ -59,10 +61,7 @@ install_docker_ubuntu() {
 
 }
 
-install_portainer() {
-	docker volume create portainer_data
-	docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.21.4
-}
+
 
 install() {
 	local distro=$1
@@ -111,6 +110,9 @@ install_packages() {
 }
 
 
+
+
+
 git_repos() {
     echo -e "${RED}Console > ${NC}${CYAN} Cloning Git-Repoisotrys!"
 
@@ -128,6 +130,33 @@ git_repos() {
 	done < "$git_repos"
 }
 
+
+
+board_determiner() {
+	echo -e "${YELLOW}DETECTED: ${NC} ${GREEN} $BOARD ${NC} !"
+	if [ "$BOARD" == "bananapim2berry" ] || [ "$BOARD" == "bananapim2berry" ]; then
+
+		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
+
+		dirs=("/var/lib" "/usr/local/bin")
+
+		for dir in "${dirs[@]}"; do
+		  mkdir -p "$dir"
+		done
+
+	    cp -r /tmp/overlay/bananapi /var/lib/
+		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
+
+		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh")
+
+		for path in "${paths[@]}"; do
+		  chmod 777 -R "$path"
+		done
+
+		manage_service "set_led_trigger.sh" "defaults"
+
+
+}
 
 manage_service() {
   local scriptname=$1
@@ -153,27 +182,26 @@ manage_service() {
 
 
 copy_overlay() {
-		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
-        dirs=("/var/lib" "/usr/local/bin")
-		for dir in "${dirs[@]}"; do
-		  mkdir -p "$dir"
-		done
+	echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
 
-	    cp -r /tmp/overlay/bananapi /var/lib/
-		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
+	dirs=("/var/lib" "/usr/local/bin")
 
-		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh")
+	for dir in "${dirs[@]}"; do
+		mkdir -p "$dir"
+	done
 
-		for path in "${paths[@]}"; do
-		  chmod 777 -R "$path"
-		done
+	paths=("")
 
-		manage_service "set_led_trigger.sh" "defaults"
+	for path in "${paths[@]}"; do
+		chmod 777 -R "$path"
+	done
 }
 
 
 
 clone_repositorys() {
+	echo -e "${RED}Console > ${NC} ${YELLOW} Cloning Repositorys!${NC}"
+
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
 
@@ -213,7 +241,76 @@ clone_repositorys() {
 	python3 setup.py build install
 	cd ..
 
-	git_repos;
+
+
+	git_repos; # Cloning Github Repositorys
+
+	chmod 777 -R /root/libarys
+	cd /root/libarys
+
+	cd BPI-WiringPi
+	./build
+	ldconfig
+	cd wiringPi
+  	make static
+  	make install-static
+	cd ../..
+
+	cd BPI-WiringPi2
+	./build
+	ldconfig
+	cd wiringPi
+  	make static
+  	make install-static
+
+	cd BPI-WiringPi2-Python
+	swig -python wiringpi.i
+	python3 setup.py build install
+	if which python &> /dev/null
+	then
+	    echo "Python is available"
+		python setup.py build install
+	else
+	    echo "Python is not available"
+		continue
+	fi
+	if which python2 &> /dev/null
+	then
+	    echo "Python2 is available"
+		python2 setup.py build install
+	else
+	    echo "Python2 is not available"
+		continue
+	fi
+
+	cd RPi.GPIO
+	groupadd -f -r gpio
+	cat <<EOF >> '/etc/udev/rules.d/99-gpio.rules','w'
+	SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
+    SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
+	SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value'"
+EOF
+	udevadm control --reload-rules
+	udevadm trigger
+	python3 setup.py install
+	if which python &> /dev/null
+	then
+	    echo "Python is available"
+		python setup.py install
+	else
+	    echo "Python is not available"
+		continue
+	fi
+	if which python2 &> /dev/null
+	then
+	    echo "Python2 is available"
+		python2 setup.py install
+	else
+	    echo "Python2 is not available"
+		continue
+	fi
+
+
  }
 
 
@@ -222,89 +319,109 @@ clone_repositorys() {
 
 build() {
     apt-get update;
+
     install "default";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
-	install_docker_ubuntu
-	install_portainer
+
+
+
 
 }
 
 build_xenial() {
     apt-get update;
 
+	install "default"
     install "ubuntu" "xenial";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_ubuntu
-	install_portainer
 }
 
 build_bionic() {
 	apt-get update;
 
+	install "default"
     install "ubuntu" "bionic";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_ubuntu
-	install_portainer
 }
 
 build_focal() {
 	apt-get update;
 
+	install "default"
     install "ubuntu" "focal";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_ubuntu
-	install_portainer
+
 }
 
 build_jammy() {
 	apt-get update;
 
+	install "default"
     install "ubuntu" "jammy";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_ubuntu
-	install_portainer
+
 }
 
 build_noble() {
 	apt-get update;
 
+	install "default"
     install "ubuntu" "noble";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_ubuntu
-	install_portainer
 }
 
 build_stretch() {
 	apt-get update;
 
+	install "default"
     install "debian" "stretch";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 }
 
 build_buster() {
 	apt-get update;
 
+	install "default"
     install "debian" "buster";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 }
 
 build_bullseye() {
@@ -316,47 +433,56 @@ build_bullseye() {
 	apt-key update
 	apt-get update;
 
+	install "default"
     install "debian" "bullseye";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 
 }
 
 build_bookworm() {
     apt-get update;
 
+	install "default"
     install "debian" "bookworm";
+
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 }
 
 build_trixie() {
     apt-get update;
 
+	install "default"
     install "debian" "trixie";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 
 }
 
 build_sid() {
     apt-get update;
 
+	install "default"
     install "debian" "sid";
+
 	copy_overlay;
+	board_determiner
 	clone_repositorys;
 
 	install_docker_debian
-	install_portainer
 
 }
 

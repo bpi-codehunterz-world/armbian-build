@@ -26,6 +26,8 @@ php-cgi
 php-curl
 php-mysql
 php-zip
+mariadb-client
+mariadb-server
 nodejs
 npm
 yarn
@@ -38,4 +40,4 @@ whois
 nmap
 fail2ban
 ufw
-swig
+openssh-server
