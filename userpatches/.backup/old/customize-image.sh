@@ -31,7 +31,7 @@ BUILD_DESKTOP=$4
 BLACK='\e[0;30m'
 WHITE='\e[0;37m'
 
-RED='\e[0;31m'
+RED='\033[0;31m'
 BLUE='\e[0;34m'
 YELLOW='\e[0;33m'
 GREEN='\e[0;32m'
@@ -42,118 +42,73 @@ NC='\033[0m'
 
 
 
-install() {
-	local distro=$1
-  	local release=$2
 
-	if [[ -z "$distro" || -z "$release" ]]; then
-    	echo "Usage: install <distro> <release>"
-    	echo "Distro: debian, ubuntu"
-		echo "Release-Debian: stretch, buster, bullseye, bookworm, trixie, sid"
-		echo "Release-Ubuntu: xenial, bionic, focal, jammy, noble"
-		echo "Release-Both: default"
-    	return 1
-  	fi
 
-	case $release in
-	  stretch|buster|bullseye|bookworm|trixie|sid|xenial|bionic|focal|jammy|noble)
-	  	packages_file="./packages_files/$distro/$release.txt"
-	  	install_packages "${packages_file}"
-		;;
-      default)
-	    packages_file="./packages_files/$release.txt"
-		install_packages "${packages_file}"
-		;;
-	  *)
-		echo "Invalid Release!"
-		return 1
-		;;
+############## INSTALLING CUSTOM APT-PACKAGES ############# INSTALLING CUSTOM APT-PACKAGES #############  INSTALLING CUSTOM APT-PACKAGES #################################################
+### Ubuntu & Debian - Default APT-Packages List
+packages="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
 
-	esac
-}
+### Ubuntu - APT-Packages List ###
+# Ubuntu: Xenial
+packages_xenial="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Ubuntu: Bionic
+packages_bionic="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Ubuntu: Focal
+packages_focal="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Ubuntu: Jammy
+packages_jammy="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv python2-dev libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Ubuntu: Noble
+packages_noble="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+### END Ubuntu - APT-Packages List END ###
 
+### Debian - APT-Packages List ###
+# Debian: Stretch
+packages_stretch="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Debian: Buster
+packages_buster="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Debian: Bullseye
+packages_bullseye="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Debian: Bookworm
+packages_bookworm="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Debian: Trixie
+packages_trixie="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+# Debian: Sid
+packages_sid="make cmake gcc clang build-essential software-properties-common python3-dev python3-pip python3-venv libc6-dev golang ruby-dev bash-completion autoconf automake swig htop php php-fpm php-cgi php-curl php-mysql php-zip nodejs npm yarn python3-smbus certbot python3-certbot-nginx nginx-full aircrack-ng net-tools traceroute whois nmap fail2ban ufw curl wget git swig"
+### END Debian - APT-Packages List END ###
+
+# Default packages-installer function!"
+# Supports: Debian & Ubuntu!" <> This function wille be executed as default if you dont need to install RELEASE-depended packages!"
 install_packages() {
-  local package_file=$1
-  if [[ ! -f "$package_file" ]]; then
-    echo "Datei $package_file nicht gefunden!"
-    return 1
-  fi
-  while IFS= read -r package; do
-    if [[ -n "$package" ]]; then
-      echo "Installiere $package..."
-      sudo apt-get install -y "$package"
-    fi
-  done < "$package_file"
+
+	echo -e "${RED}INFO > Installing additional packages!${NC}"
+
+	apt-get update
+
+        for package in $packages
+        do
+            sudo apt-get install -y $package
+        done
 }
 
 
 
 
+install_packages_jammy() {
 
+	echo -e "${RED}INFO > Installing additional packages!${NC}"
 
-############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
-# update-rc.d System-V-Init Script Service Updater
-manage_service() {
-  local scriptname=$1
-  local option=$2
+	apt-get update
 
-  if [[ -z "$scriptname" || -z "$option" ]]; then
-    echo "Usage: manage_service <scriptname> <option>"
-    echo "Options: defaults, remove, disable, enable"
-    return 1
-  fi
-
-  case $option in
-    defaults|remove|disable|enable)
-      sudo update-rc.d "$scriptname" "$option"
-      ;;
-    *)
-      echo "Invalid option: $option"
-      echo "Options: defaults, remove, disable, enable"
-      return 1
-      ;;
-  esac
+        for package in $packages_jammy
+        do
+            sudo apt-get install -y $package
+        done
 }
 
 
-### COPYING OVERLAY TO ROOTFS
-copy_overlay() {
-		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
+############## END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ##########################
 
-
-		### Creating Directorys!" ###
-                dirs=("/var/lib" "/usr/local/bin") # Variable Includes all directroys which will be build!"
-
-		for dir in "${dirs[@]}"; do
-		  mkdir -p "$dir"
-		done
-
-
-		### Directorys, Files and Other to Copy FROM: /tmp/overlay TO: /destination !" ###
-		# This enables Banana Pi's Board-Determiner!
-	    cp -r /tmp/overlay/bananapi /var/lib/
-		# This set the onBoards LED's trigger for the GREEN and RED LED to blink if trigger is pointed!
-		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
-
-
-		### Grant privileges!" ###
-	#OLD:
-		# sudo chmod 777 -R /var/lib/bananapi
-		# sudo chmod +x /etc/init.d/set_led_trigger.sh
-
-		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh") # Variable Includes all paths which privileges will be modified!"
-
-		for path in "${paths[@]}"; do
-		  chmod 777 "$path"  # Set privilegs to 777 (RO,RW;X)
-		done
-
-
-		### Updates System-V-Init Scripts!" ###
-		manage_service "set_led_trigger.sh" "defaults" # sudo update-rc.d set_led_trigger.sh defaults
-
-}
-
-
+##########################################################################################################################################################################################
 
 ############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
 clone_repositorys() {
@@ -194,6 +149,70 @@ clone_repositorys() {
 
 ##########################################################################################################################################################################################
 
+############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
+# update-rc.d System-V-Init Script Service Updater
+manage_service() {
+  local scriptname=$1
+  local option=$2
+
+  if [[ -z "$scriptname" || -z "$option" ]]; then
+    echo "Usage: manage_service <scriptname> <option>"
+    echo "Options: defaults, remove, disable, enable"
+    return 1
+  fi
+
+  case $option in
+    defaults|remove|disable|enable)
+      sudo update-rc.d "$scriptname" "$option"
+      ;;
+    *)
+      echo "Invalid option: $option"
+      echo "Options: defaults, remove, disable, enable"
+      return 1
+      ;;
+  esac
+}
+
+
+copy_overlay() {
+		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
+
+
+		### Creating Directorys!" ###
+                dirs=("/var/lib" "/usr/local/bin") # Variable Includes all directroys which will be build!"
+
+		for dir in "${dirs[@]}"; do
+		  mkdir -p "$dir"
+		done
+
+
+		### Directorys, Files and Other to Copy FROM: /tmp/overlay TO: /destination !" ###
+		# This enables Banana Pi's Board-Determiner!
+	    cp -r /tmp/overlay/bananapi /var/lib/
+		# This set the onBoards LED's trigger for the GREEN and RED LED to blink if trigger is pointed!
+		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
+
+
+		### Grant privileges!" ###
+	#OLD:
+		# sudo chmod 777 -R /var/lib/bananapi
+		# sudo chmod +x /etc/init.d/set_led_trigger.sh
+
+		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh") # Variable Includes all paths which privileges will be modified!"
+
+		for path in "${paths[@]}"; do
+		  chmod 777 "$path"  # Set privilegs to 777 (RO,RW;X)
+		done
+
+
+		### Updates System-V-Init Scripts!" ###
+		manage_service "set_led_trigger.sh" "defaults" # sudo update-rc.d set_led_trigger.sh defaults
+
+}
+
+
+
+
 
 
 
@@ -202,79 +221,82 @@ clone_repositorys() {
 # Default gen-customize function, this function will be executed by default!"
 # Support: Debian & Ubuntu!"
 build() {
-    install "default";
+    install_packages;
 	copy_overlay;
 	clone_repositorys;
 
 }
 
+# This are the special- maximum optimized gen-customize-functions depending on RELEASE!
 
 # Support: Ubuntu!" #
 build_xenial() {
-    install "ubuntu" "xenial";
+    install_packages_xenial;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_bionic() {
-    install "ubuntu" "bionic";
+    install_packages_bionic;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_focal() {
-    install "ubuntu" "focal";
+    install_packages_focal;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_jammy() {
-    install "ubuntu" "jammy";
+    install_packages_jammy;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_noble() {
-    install "ubuntu" "noble";
+    install_packages_noble;
 	copy_overlay;
 	clone_repositorys;
 }
+# End Support: Ubuntu END #
 
 # Support: Debian!" #
 build_stretch() {
-    install "debian" "stretch";
+    install_packages_stretch;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_buster() {
-    install "debian" "buster";
+    install_packages_buster;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_bullseye() {
-    install "debian" "bullseye";
+    install_packages_bullseye;
 	copy_overlay;
 	clone_repositorys;
 
 }
 
 build_bookworm() {
-    install "debian" "bookworm";
+    install_packages_bookworm;
 	copy_overlay;
 	clone_repositorys;
 }
 
 build_trixie() {
-    install "debian" "trixie";
+    install_packages_trixie;
 	copy_overlay;
 	clone_repositorys;
 
 }
 
+# Building for RELEASE: "sid"
 build_sid() {
-    install "debian" "sid";
+    install_packages_sid;
 	copy_overlay;
 	clone_repositorys;
 
@@ -284,211 +306,6 @@ build_sid() {
 
 
 ################## END BUILD CUSTOMIZE END ##################  END BUILD CUSTOMIZE END ################## END BUILD CUSTOMIZE END ##################
-
-
-
-##### MENU #######
-print_menu() {
-  local title=$1
-  local selected=$2
-  shift 2
-  local options=("$@")
-  local width=100  # Breite des Menüs
-
-  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m" # Top Border
-  printf "\e[1;34m|%-*s|\e[0m\n" $width "$title" # Title
-  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m" # Border
-
-  echo -e "${RED}==================================================================${NC}"
-  echo -e "${RED}||hexzhen3x7's - Armbian-Build System made for Banana Pi | v0.2 ||${NC}"
-  echo -e "${RED}==================================================================${NC}"
-
-  echo -e "${RED}$title${NC}"
-  for i in "${!options[@]}"; do
-    if [[ $i -eq $selected ]]; then
-      echo -e "\e[1;32m-> ${options[$i]}\e[0m"
-    else
-      echo "   ${options[$i]}"
-    fi
-  done
-
-  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m"
-
-}
-
-
-
-# Funktion zum Verwalten des Menüs
-run_menu() {
-  local title=$1
-  shift
-  local options=("$@")
-  local selected=0
-  local key
-
-  while true; do
-    clear
-    print_menu "$title" $selected "${options[@]}"
-    read -rsn1 key
-    case $key in
-      $'\x1b') # ESC-Sequenz
-        read -rsn2 key
-        case $key in
-          '[A') # Pfeil nach oben
-            ((selected--))
-            if [[ $selected -lt 0 ]]; then
-              selected=$((${#options[@]} - 1))
-            fi
-            ;;
-          '[B') # Pfeil nach unten
-            ((selected++))
-            if [[ $selected -ge ${#options[@]} ]]; then
-              selected=0
-            fi
-            ;;
-        esac
-        ;;
-      '') # Enter-Taste
-        case ${options[$selected]} in
-		  # Main Menu
-          "APT Installer")
-            run_menu "APT Installer" "Debian" "Ubuntu" "Back"
-            ;;
-          "Debian")
-            run_menu "Debian" "Stretch" "Buster" "Bullseye" "Bookworm" "Trixie" "Sid" "Back"
-            ;;
-
-		  # SubMenu -Debian
-		  "Stretch")
-		 	echo "You selected: Stretch!"
-            build_stretch
-            ;;
-		  "Buster")
-		 	echo "You selected: Buster!"
-            build_buster
-            ;;
-		  "Bullseye")
-		 	echo "You selected: Bullseye!"
-            install "debian" "bullseye"
-            ;;
-		  "Bookworm")
-		 	echo "You selected: Bookworm!"
-            build_bookworm
-            ;;
-		  "Trixie")
-		 	echo "You selected: Trixie!"
-            build_trixie
-            ;;
-		  "Sid")
-		 	echo "You selected: Sid!"
-            build_sid
-            ;;
-          "Ubuntu")
-            run_menu "Ubuntu" "Xenial" "Bionic" "Focal" "Jammy" "Noble" "Back"
-            ;;
-		  # SubMenu - Ubuntu
-		  "Xenial")
-		 	echo "You selected: Stretch!"
-            build_xenial
-            ;;
-		  "Bionic")
-		 	echo "You selected: Buster!"
-            build_bionic
-            ;;
-		  "Focal")
-		 	echo "You selected: Bullseye!"
-            build_focal
-            ;;
-		  "Jammy")
-		 	echo "You selected: Bookworm!"
-            build_jammy
-            ;;
-		  "Noble")
-		 	echo "You selected: Trixie!"
-            build_noble
-            ;;
-		  # Main-Menu
-          "Git Installer")
-            echo "Choosed: Git Installer"
-			run_menu "RPi.GPIO" "BPI-WiringPi" "BPI-WiringPi2" "BPI-WiringPi2-Python" "PiFM" "rpitx" "Back"
-            read -p "Press any key to continue!..."
-            ;;
-          "System-V-Init")
-            echo "Choosed: System-V-Init"
-			run_menu "Integrated LED-Trigger"
-
-            read -p "Press any key to continue!..."
-            ;;
-			# Sub-Menu V-Init LED Trigger
-		  "Integrated LED-Trigger")
-		    run_menu "Defaults" "Enable" "Disbale" "Remove" "Back"
-			;;
-		  "Defaults")
-		  	echo "Adding System-V-Init Script: set_led_trigger.sh!"
-			read -p "Press any key to continue!..."
-		  	manage_service "set_led_trigger.sh" "defaults"
-			echo "INFO: Your board should blink: Green:heartbeat | Red:CPU0 !"
-			;;
-		  "Enable")
-		  	echo "Enable System-V-Init Script: set_led_trigger.sh!"
-			read -p "Press any key to continue!..."
-		  	manage_service "set_led_trigger.sh" "enable"
-			echo "INFO: Enabled Script!"
-			;;
-		  "Disable")
-		  	echo "Disable System-V-Init Script: set_led_trigger.sh!"
-			read -p "Press any key to continue!..."
-		  	manage_service "set_led_trigger.sh" "disable"
-			echo "INFO: Disabled Script!"
-			;;
-		  "Remove")
-		  	echo "Remove System-V-Init Script: set_led_trigger.sh!"
-			read -p "Press any key to continue!..."
-		  	manage_service "set_led_trigger.sh" "remove"
-			echo "INFO: Removed Script!"
-			;;
-		# END System-V-Init SubMenu
-		# Main Menu
-          "Systemd-Services")
-            echo "Choosed: Systemd-Services"
-            read -p "Press any key to continue!..."
-            ;;
-		  "Back")
-		  	break
-			;;
-          "Exit")
-            break
-            ;;
-          *)
-            echo "You selected: ${options[$selected]}"
-            read -p "Press any key to continue!..."
-            ;;
-
-
-        esac
-        ;;
-    esac
-  done
-}
-
-# Hauptmenü ausführen
-run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init" "Systemd-Services" "Exit"
-
-
-
-
-############## INSTALLING CUSTOM APT-PACKAGES ############# INSTALLING CUSTOM APT-PACKAGES #############  INSTALLING CUSTOM APT-PACKAGES #################################################
-
-
-
-
-
-
-############## END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ##########################
-
-##########################################################################################################################################################################################
-
-
 
 
 

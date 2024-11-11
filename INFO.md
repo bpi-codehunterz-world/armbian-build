@@ -3,7 +3,7 @@
 [id]: https://github.com/bpi-codehunterz-world/armbian-build
 
 [Projekt Mappe][idx]
-[id]: https://github.com/orgs/bpi-codehunterz-world/projects/6
+[idx]: https://github.com/orgs/bpi-codehunterz-world/projects/6
 
 
 ## Armbian Releases

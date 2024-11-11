@@ -42,251 +42,6 @@ NC='\033[0m'
 
 
 
-install() {
-	local distro=$1
-  	local release=$2
-
-	if [[ -z "$distro" || -z "$release" ]]; then
-    	echo "Usage: install <distro> <release>"
-    	echo "Distro: debian, ubuntu"
-		echo "Release-Debian: stretch, buster, bullseye, bookworm, trixie, sid"
-		echo "Release-Ubuntu: xenial, bionic, focal, jammy, noble"
-		echo "Release-Both: default"
-    	return 1
-  	fi
-
-	case $release in
-	  stretch|buster|bullseye|bookworm|trixie|sid|xenial|bionic|focal|jammy|noble)
-	  	packages_file="./packages_files/$distro/$release.txt"
-	  	install_packages "${packages_file}"
-		;;
-      default)
-	    packages_file="./packages_files/$release.txt"
-		install_packages "${packages_file}"
-		;;
-	  *)
-		echo "Invalid Release!"
-		return 1
-		;;
-
-	esac
-}
-
-install_packages() {
-  local package_file=$1
-  if [[ ! -f "$package_file" ]]; then
-    echo "Datei $package_file nicht gefunden!"
-    return 1
-  fi
-  while IFS= read -r package; do
-    if [[ -n "$package" ]]; then
-      echo "Installiere $package..."
-      sudo apt-get install -y "$package"
-    fi
-  done < "$package_file"
-}
-
-
-
-
-
-
-############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
-# update-rc.d System-V-Init Script Service Updater
-manage_service() {
-  local scriptname=$1
-  local option=$2
-
-  if [[ -z "$scriptname" || -z "$option" ]]; then
-    echo "Usage: manage_service <scriptname> <option>"
-    echo "Options: defaults, remove, disable, enable"
-    return 1
-  fi
-
-  case $option in
-    defaults|remove|disable|enable)
-      sudo update-rc.d "$scriptname" "$option"
-      ;;
-    *)
-      echo "Invalid option: $option"
-      echo "Options: defaults, remove, disable, enable"
-      return 1
-      ;;
-  esac
-}
-
-
-### COPYING OVERLAY TO ROOTFS
-copy_overlay() {
-		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
-
-
-		### Creating Directorys!" ###
-                dirs=("/var/lib" "/usr/local/bin") # Variable Includes all directroys which will be build!"
-
-		for dir in "${dirs[@]}"; do
-		  mkdir -p "$dir"
-		done
-
-
-		### Directorys, Files and Other to Copy FROM: /tmp/overlay TO: /destination !" ###
-		# This enables Banana Pi's Board-Determiner!
-	    cp -r /tmp/overlay/bananapi /var/lib/
-		# This set the onBoards LED's trigger for the GREEN and RED LED to blink if trigger is pointed!
-		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
-
-
-		### Grant privileges!" ###
-	#OLD:
-		# sudo chmod 777 -R /var/lib/bananapi
-		# sudo chmod +x /etc/init.d/set_led_trigger.sh
-
-		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh") # Variable Includes all paths which privileges will be modified!"
-
-		for path in "${paths[@]}"; do
-		  chmod 777 "$path"  # Set privilegs to 777 (RO,RW;X)
-		done
-
-
-		### Updates System-V-Init Scripts!" ###
-		manage_service "set_led_trigger.sh" "defaults" # sudo update-rc.d set_led_trigger.sh defaults
-
-}
-
-
-
-############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
-clone_repositorys() {
-
-	mkdir -p /usr/share/libarys
-	cd /usr/share/libarys
-
-	git clone https://github.com/bpi-codehunterz-world/RPi.GPIO
-	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2
-	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
-
-	chmod 777 -R ../**
-
-	echo -e "INFO: Installing BPI-WiringPi2!"
-	cd BPI-WiringPi2
-	./build
-	echo -e "/usr/local/lib" >> /etc/ld.so.conf
-	sudo ldconfig
-	cd wiringPi
-  	make static
-  	sudo make install-static
-	cd ..
-	cd ..
-	echo -e "INFO: Installing RPi.GPIO!"
-    cd RPi.GPIO
-	sudo python3 setup.py install
-	sudo pip3 install . --break-system-packages
-	cd ..
-	echo -e "INFO: Installing BPI-WiringPi2-Python!"
-	cd BPI-WiringPi2-Python
-	swig -python wiringpi.i
-	sudo python3 setup.py build install
-	cd ..
- }
-
-
-############## END INSTALLING CUSTOM GIT REPOS END ################ END INSTALLING CUSTOM GIT REPOS END ###################  END INSTALLING CUSTOM GIT REPOS END #########################
-
-##########################################################################################################################################################################################
-
-
-
-
-################## BUILD CUSTOMIZE ################## BUILD CUSTOMIZE ##################  BUILD CUSTOMIZE ##################
-
-# Default gen-customize function, this function will be executed by default!"
-# Support: Debian & Ubuntu!"
-build() {
-    install "default";
-	copy_overlay;
-	clone_repositorys;
-
-}
-
-
-# Support: Ubuntu!" #
-build_xenial() {
-    install "ubuntu" "xenial";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_bionic() {
-    install "ubuntu" "bionic";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_focal() {
-    install "ubuntu" "focal";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_jammy() {
-    install "ubuntu" "jammy";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_noble() {
-    install "ubuntu" "noble";
-	copy_overlay;
-	clone_repositorys;
-}
-
-# Support: Debian!" #
-build_stretch() {
-    install "debian" "stretch";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_buster() {
-    install "debian" "buster";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_bullseye() {
-    install "debian" "bullseye";
-	copy_overlay;
-	clone_repositorys;
-
-}
-
-build_bookworm() {
-    install "debian" "bookworm";
-	copy_overlay;
-	clone_repositorys;
-}
-
-build_trixie() {
-    install "debian" "trixie";
-	copy_overlay;
-	clone_repositorys;
-
-}
-
-build_sid() {
-    install "debian" "sid";
-	copy_overlay;
-	clone_repositorys;
-
-}
-# End Support: Debian END #
-
-
-
-################## END BUILD CUSTOMIZE END ##################  END BUILD CUSTOMIZE END ################## END BUILD CUSTOMIZE END ##################
-
-
-
 ##### MENU #######
 print_menu() {
   local title=$1
@@ -315,7 +70,6 @@ print_menu() {
   echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m"
 
 }
-
 
 
 # Funktion zum Verwalten des Menüs
@@ -361,27 +115,29 @@ run_menu() {
 		  # SubMenu -Debian
 		  "Stretch")
 		 	echo "You selected: Stretch!"
-            build_stretch
+            build_bullseye
             ;;
 		  "Buster")
 		 	echo "You selected: Buster!"
-            build_buster
+            build_bullseye
             ;;
 		  "Bullseye")
 		 	echo "You selected: Bullseye!"
-            install "debian" "bullseye"
+            install "debian" "bullseye";
+
+			continue
             ;;
 		  "Bookworm")
 		 	echo "You selected: Bookworm!"
-            build_bookworm
+            build_bullseye
             ;;
 		  "Trixie")
 		 	echo "You selected: Trixie!"
-            build_trixie
+            build_bullseye
             ;;
 		  "Sid")
 		 	echo "You selected: Sid!"
-            build_sid
+            build_bullseye
             ;;
           "Ubuntu")
             run_menu "Ubuntu" "Xenial" "Bionic" "Focal" "Jammy" "Noble" "Back"
@@ -389,23 +145,23 @@ run_menu() {
 		  # SubMenu - Ubuntu
 		  "Xenial")
 		 	echo "You selected: Stretch!"
-            build_xenial
+            build_bullseye
             ;;
 		  "Bionic")
 		 	echo "You selected: Buster!"
-            build_bionic
+            build_bullseye
             ;;
 		  "Focal")
 		 	echo "You selected: Bullseye!"
-            build_focal
+            build_bullseye
             ;;
 		  "Jammy")
 		 	echo "You selected: Bookworm!"
-            build_jammy
+            build_bullseye
             ;;
 		  "Noble")
 		 	echo "You selected: Trixie!"
-            build_noble
+            build_bullseye
             ;;
 		  # Main-Menu
           "Git Installer")
@@ -478,7 +234,37 @@ run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init"
 
 
 ############## INSTALLING CUSTOM APT-PACKAGES ############# INSTALLING CUSTOM APT-PACKAGES #############  INSTALLING CUSTOM APT-PACKAGES #################################################
+### Ubuntu & Debian - Default APT-Packages List
 
+
+# Default packages-installer function!"
+# Supports: Debian & Ubuntu!" <> This function wille be executed as default if you dont need to install RELEASE-depended packages!"
+install_packages() {
+  local package_file=$1
+
+  # Überprüfen, ob die Datei existiert
+  if [[ ! -f "$package_file" ]]; then
+    echo "Datei $package_file nicht gefunden!"
+    return 1
+  fi
+
+  # Pakete aus der Datei einlesen und installieren
+  while IFS= read -r package; do
+    if [[ -n "$package" ]]; then
+      echo "Installiere $package..."
+      sudo apt-get install -y "$package"
+    fi
+  done < "$package_file"
+}
+
+install_packages_old() {
+	echo -e "${RED}INFO > Installing additional packages!${NC}"
+	apt-get update
+    for package in $packages
+    do
+        sudo apt-get install -y $package
+    done
+}
 
 
 
@@ -488,7 +274,202 @@ run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init"
 
 ##########################################################################################################################################################################################
 
+############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
+clone_repositorys() {
 
+	mkdir -p /usr/share/libarys
+	cd /usr/share/libarys
+
+	git clone https://github.com/bpi-codehunterz-world/RPi.GPIO
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
+
+	chmod 777 -R ../**
+
+	echo -e "INFO: Installing BPI-WiringPi2!"
+	cd BPI-WiringPi2
+	./build
+	echo -e "/usr/local/lib" >> /etc/ld.so.conf
+	sudo ldconfig
+	cd wiringPi
+  	make static
+  	sudo make install-static
+	cd ..
+	cd ..
+	echo -e "INFO: Installing RPi.GPIO!"
+    cd RPi.GPIO
+	sudo python3 setup.py install
+	sudo pip3 install . --break-system-packages
+	cd ..
+	echo -e "INFO: Installing BPI-WiringPi2-Python!"
+	cd BPI-WiringPi2-Python
+	swig -python wiringpi.i
+	sudo python3 setup.py build install
+	cd ..
+ }
+
+
+############## END INSTALLING CUSTOM GIT REPOS END ################ END INSTALLING CUSTOM GIT REPOS END ###################  END INSTALLING CUSTOM GIT REPOS END #########################
+
+##########################################################################################################################################################################################
+
+############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
+# update-rc.d System-V-Init Script Service Updater
+manage_service() {
+  local scriptname=$1
+  local option=$2
+
+  if [[ -z "$scriptname" || -z "$option" ]]; then
+    echo "Usage: manage_service <scriptname> <option>"
+    echo "Options: defaults, remove, disable, enable"
+    return 1
+  fi
+
+  case $option in
+    defaults|remove|disable|enable)
+      sudo update-rc.d "$scriptname" "$option"
+      ;;
+    *)
+      echo "Invalid option: $option"
+      echo "Options: defaults, remove, disable, enable"
+      return 1
+      ;;
+  esac
+}
+
+
+copy_overlay() {
+		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
+
+
+		### Creating Directorys!" ###
+                dirs=("/var/lib" "/usr/local/bin") # Variable Includes all directroys which will be build!"
+
+		for dir in "${dirs[@]}"; do
+		  mkdir -p "$dir"
+		done
+
+
+		### Directorys, Files and Other to Copy FROM: /tmp/overlay TO: /destination !" ###
+		# This enables Banana Pi's Board-Determiner!
+	    cp -r /tmp/overlay/bananapi /var/lib/
+		# This set the onBoards LED's trigger for the GREEN and RED LED to blink if trigger is pointed!
+		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
+
+
+		### Grant privileges!" ###
+	#OLD:
+		# sudo chmod 777 -R /var/lib/bananapi
+		# sudo chmod +x /etc/init.d/set_led_trigger.sh
+
+		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh") # Variable Includes all paths which privileges will be modified!"
+
+		for path in "${paths[@]}"; do
+		  chmod 777 "$path"  # Set privilegs to 777 (RO,RW;X)
+		done
+
+
+		### Updates System-V-Init Scripts!" ###
+		manage_service "set_led_trigger.sh" "defaults" # sudo update-rc.d set_led_trigger.sh defaults
+
+}
+
+
+
+
+
+
+
+################## BUILD CUSTOMIZE ################## BUILD CUSTOMIZE ##################  BUILD CUSTOMIZE ##################
+
+# Default gen-customize function, this function will be executed by default!"
+# Support: Debian & Ubuntu!"
+build() {
+    install_packages;
+	copy_overlay;
+	clone_repositorys;
+
+}
+
+# This are the special- maximum optimized gen-customize-functions depending on RELEASE!
+
+# Support: Ubuntu!" #
+build_xenial() {
+    install_packages_xenial;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_bionic() {
+    install_packages_bionic;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_focal() {
+    install_packages_focal;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_jammy() {
+    install_packages_jammy;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_noble() {
+    install_packages_noble;
+	copy_overlay;
+	clone_repositorys;
+}
+# End Support: Ubuntu END #
+
+# Support: Debian!" #
+build_stretch() {
+    install_packages_stretch;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_buster() {
+    install_packages_buster;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_bullseye() {
+    install "debian" "bullseye";
+	copy_overlay;
+	clone_repositorys;
+
+}
+
+build_bookworm() {
+    install_packages_bookworm;
+	copy_overlay;
+	clone_repositorys;
+}
+
+build_trixie() {
+    install_packages_trixie;
+	copy_overlay;
+	clone_repositorys;
+
+}
+
+# Building for RELEASE: "sid"
+build_sid() {
+    install_packages_sid;
+	copy_overlay;
+	clone_repositorys;
+
+}
+# End Support: Debian END #
+
+
+
+################## END BUILD CUSTOMIZE END ##################  END BUILD CUSTOMIZE END ################## END BUILD CUSTOMIZE END ##################
 
 
 
