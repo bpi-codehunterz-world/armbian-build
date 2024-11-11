@@ -89,9 +89,20 @@ install_packages() {
 }
 
 
+git_repos() {
+  	FILE="./git_repos/repos.txt"
+  	if [ ! -f "$FILE" ]; then
+	    echo "$FILE does not exist."
+	    exit 1
+	fi
 
-
-
+	while IFS= read -r repo; do
+	    echo "Cloning $repo..."
+		mkdir -p /root/libarys
+		cd /root/libarys
+	    git clone "$repo"
+	done < "$FILE"
+}
 
 ############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
 # update-rc.d System-V-Init Script Service Updater
@@ -159,14 +170,16 @@ copy_overlay() {
 
 ############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
 clone_repositorys() {
-	apt-get install -y swig python3-dev python3-pip python3-venv git curl wget make cmake build-essential
 
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
 
 	git clone https://github.com/bpi-codehunterz-world/RPi.GPIO
+	sleep(2)
 	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2
+	sleep(2)
 	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
+	sleep(2)
 
 	chmod 777 -R ../**
 
@@ -178,18 +191,24 @@ clone_repositorys() {
 	cd wiringPi
   	make static
   	make install-static
+	sleep(2)
 	cd ..
 	cd ..
 	echo -e "INFO: Installing RPi.GPIO!"
     cd RPi.GPIO
 	python3 setup.py install
 	pip3 install . --break-system-packages
+	sleep(2)
 	cd ..
 	echo -e "INFO: Installing BPI-WiringPi2-Python!"
 	cd BPI-WiringPi2-Python
 	swig -python wiringpi.i
 	python3 setup.py build install
 	cd ..
+
+
+
+	git_repos;
  }
 
 
@@ -270,13 +289,13 @@ build_buster() {
 
 build_bullseye() {
 	apt-get update;
-
 	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 93D6889F9F0E78D5
-	apt-get update
     wget -qO - https://armbian.github.io/configng/KEY.gpg | sudo apt-key add -
-	apt-get update
-	apt-key update
+	gpg --export 93D6889F9F0E78D5 | sudo tee /etc/apt/trusted.gpg.d/armbian.gpg
 	apt-key net-update
+	apt-key update
+	apt-get update;
+
     install "debian" "bullseye";
 	copy_overlay;
 	clone_repositorys;
@@ -485,7 +504,8 @@ run_menu() {
 		  	break
 			;;
           "Exit")
-            break
+            break;
+			continue
             ;;
           *)
             echo "You selected: ${options[$selected]}"
