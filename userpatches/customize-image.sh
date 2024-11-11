@@ -208,7 +208,6 @@ build() {
 
 }
 
-
 # Support: Ubuntu!" #
 build_xenial() {
     install "ubuntu" "xenial";
@@ -369,7 +368,7 @@ run_menu() {
             ;;
 		  "Bullseye")
 		 	echo "You selected: Bullseye!"
-            install "debian" "bullseye"
+			build_bullseye
             ;;
 		  "Bookworm")
 		 	echo "You selected: Bookworm!"
