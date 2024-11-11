@@ -2,19 +2,35 @@
 
 # arguments: $RELEASE $LINUXFAMILY $BOARD $BUILD_DESKTOP
 #
+# This is the image customization script
+
+# NOTE: It is copied to /tmp directory inside the image
+# and executed there inside chroot environment
+# so don't reference any files that are not already installed
+
+# NOTE: If you want to transfer files between chroot and host
+# userpatches/overlay directory on host is bind-mounted to /tmp/overlay in chroot
+# The sd card's root path is accessible via $SDCARD variable.
+#
 # Author:  hexzhen3x7
 # Version: 2.0
 # Website: https://codehunterz.world
 # Github:  https://github.com/bpi-codehunterz-world/armbian-firmware-builder
 # Description: This repository is made for building Armbian for Banana Pi's !"
 
+
+
 RELEASE=$1
 LINUXFAMILY=$2
 BOARD=$3
 BUILD_DESKTOP=$4
 
+
+
+### Console Colors ###
 BLACK='\e[0;30m'
 WHITE='\e[0;37m'
+
 RED='\e[0;31m'
 BLUE='\e[0;34m'
 YELLOW='\e[0;33m'
@@ -22,51 +38,14 @@ GREEN='\e[0;32m'
 PURPLE='\e[0;35m'
 CYAN='\e[0;36m'
 NC='\033[0m'
+### END Console Colors END ###
 
 
-install_docker_debian() {
-	# Add Docker's official GPG key:
-	sudo apt-get update
-	sudo apt-get install ca-certificates curl
-	sudo install -m 0755 -d /etc/apt/keyrings
-	sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-	sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-	# Add the repository to Apt sources:
-	echo \
-  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  	sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	sudo apt-get update
-	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-}
-
-install_docker_ubuntu() {
-	# Add Docker's official GPG key:
-	sudo apt-get update
-	sudo apt-get install ca-certificates curl
-	sudo install -m 0755 -d /etc/apt/keyrings
-	sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-	sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-	# Add the repository to Apt sources:
-	echo \
-  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  	sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	sudo apt-get update
-	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-
-}
-
-install_portainer() {
-	docker volume create portainer_data
-	docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.21.4
-}
 
 install() {
 	local distro=$1
   	local release=$2
+
 
 	if [[ -z "$distro" || -z "$release" ]]; then
     	echo "Usage: install <distro> <release>"
@@ -79,32 +58,31 @@ install() {
 
 	case $release in
 	  stretch|buster|bullseye|bookworm|trixie|sid|xenial|bionic|focal|jammy|noble)
-	  	packages_file="/tmp/packages_files/$distro/$release.txt"
+	  	packages_file="./packages_files/$distro/$release.txt"
 	  	install_packages "${packages_file}"
 		;;
       default)
-	    packages_file="/tmp/packages_files/$release.txt"
+	    packages_file="./packages_files/$release.txt"
 		install_packages "${packages_file}"
 		;;
 	  *)
 		echo "Invalid Release!"
 		return 1
 		;;
+
 	esac
 }
 
 install_packages() {
   local package_file=$1
 
-  echo -e "${RED}Console > ${NC}${CYAN} Installing APT-Packages!"
-
   if [[ ! -f "$package_file" ]]; then
-    echo "File $package_file not found!"
+    echo "Datei $package_file nicht gefunden!"
     return 1
   fi
   while IFS= read -r package; do
     if [[ -n "$package" ]]; then
-      echo "installing $package..."
+      echo "Installiere $package..."
       sudo apt-get install -y "$package"
     fi
   done < "$package_file"
@@ -112,11 +90,9 @@ install_packages() {
 
 
 git_repos() {
-    echo -e "${RED}Console > ${NC}${CYAN} Cloning Git-Repoisotrys!"
-
-  	git_repos="/tmp/git_repos/repos.txt"
-  	if [ ! -f "$git_repos" ]; then
-	    echo "$git_repos does not exist."
+  	FILE="./git_repos/repos.txt"
+  	if [ ! -f "$FILE" ]; then
+	    echo "$FILE does not exist."
 	    exit 1
 	fi
 
@@ -125,10 +101,11 @@ git_repos() {
 		mkdir -p /root/libarys
 		cd /root/libarys
 	    git clone "$repo"
-	done < "$git_repos"
+	done < "$FILE"
 }
 
-
+############## COPYING CUSTOM SCIPRTS, SERVICES & MORE ################ COPYING CUSTOM SCIPRTS, SERVICES & MORE ################### COPYING CUSTOM SCIPRTS, SERVICES & MORE ##############
+# update-rc.d System-V-Init Script Service Updater
 manage_service() {
   local scriptname=$1
   local option=$2
@@ -152,28 +129,48 @@ manage_service() {
 }
 
 
+### COPYING OVERLAY TO ROOTFS
 copy_overlay() {
 		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
-        dirs=("/var/lib" "/usr/local/bin")
+
+
+		### Creating Directorys!" ###
+                dirs=("/var/lib" "/usr/local/bin") # Variable Includes all directroys which will be build!"
+
 		for dir in "${dirs[@]}"; do
 		  mkdir -p "$dir"
 		done
 
+
+		### Directorys, Files and Other to Copy FROM: /tmp/overlay TO: /destination !" ###
+		# This enables Banana Pi's Board-Determiner!
 	    cp -r /tmp/overlay/bananapi /var/lib/
+		# This set the onBoards LED's trigger for the GREEN and RED LED to blink if trigger is pointed!
 		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
 
-		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh")
+
+		### Grant privileges!" ###
+	#OLD:
+		# sudo chmod 777 -R /var/lib/bananapi
+		# sudo chmod +x /etc/init.d/set_led_trigger.sh
+
+		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh") # Variable Includes all paths which privileges will be modified!"
 
 		for path in "${paths[@]}"; do
-		  chmod 777 -R "$path"
+		  chmod 777 "$path"  # Set privilegs to 777 (RO,RW;X)
 		done
 
-		manage_service "set_led_trigger.sh" "defaults"
+
+		### Updates System-V-Init Scripts!" ###
+		manage_service "set_led_trigger.sh" "defaults" # sudo update-rc.d set_led_trigger.sh defaults
+
 }
 
 
 
+############## INSTALLING CUSTOM GIT REPOS ################ INSTALLING CUSTOM GIT REPOS ###################  INSTALLING CUSTOM GIT REPOS #################################################
 clone_repositorys() {
+
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
 
@@ -194,18 +191,14 @@ clone_repositorys() {
 	cd wiringPi
   	make static
   	make install-static
-
 	sleep 2
-
 	cd ..
 	cd ..
 	echo -e "INFO: Installing RPi.GPIO!"
     cd RPi.GPIO
 	python3 setup.py install
-	pip3 install .
-
+	pip3 install . --break-system-packages
 	sleep 2
-
 	cd ..
 	echo -e "INFO: Installing BPI-WiringPi2-Python!"
 	cd BPI-WiringPi2-Python
@@ -213,20 +206,28 @@ clone_repositorys() {
 	python3 setup.py build install
 	cd ..
 
+
+
 	git_repos;
  }
 
 
+############## END INSTALLING CUSTOM GIT REPOS END ################ END INSTALLING CUSTOM GIT REPOS END ###################  END INSTALLING CUSTOM GIT REPOS END #########################
+
+##########################################################################################################################################################################################
 
 
 
+
+################## BUILD CUSTOMIZE ################## BUILD CUSTOMIZE ##################  BUILD CUSTOMIZE ##################
+
+# Default gen-customize function, this function will be executed by default!"
+# Support: Debian & Ubuntu!"
 build() {
     apt-get update;
     install "default";
 	copy_overlay;
 	clone_repositorys;
-	install_docker_ubuntu
-	install_portainer
 
 }
 
@@ -236,9 +237,6 @@ build_xenial() {
     install "ubuntu" "xenial";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_ubuntu
-	install_portainer
 }
 
 build_bionic() {
@@ -247,9 +245,6 @@ build_bionic() {
     install "ubuntu" "bionic";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_ubuntu
-	install_portainer
 }
 
 build_focal() {
@@ -258,9 +253,6 @@ build_focal() {
     install "ubuntu" "focal";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_ubuntu
-	install_portainer
 }
 
 build_jammy() {
@@ -269,9 +261,6 @@ build_jammy() {
     install "ubuntu" "jammy";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_ubuntu
-	install_portainer
 }
 
 build_noble() {
@@ -280,9 +269,6 @@ build_noble() {
     install "ubuntu" "noble";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_ubuntu
-	install_portainer
 }
 
 build_stretch() {
@@ -291,9 +277,6 @@ build_stretch() {
     install "debian" "stretch";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_debian
-	install_portainer
 }
 
 build_buster() {
@@ -302,9 +285,6 @@ build_buster() {
     install "debian" "buster";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_debian
-	install_portainer
 }
 
 build_bullseye() {
@@ -320,9 +300,6 @@ build_bullseye() {
 	copy_overlay;
 	clone_repositorys;
 
-	install_docker_debian
-	install_portainer
-
 }
 
 build_bookworm() {
@@ -331,9 +308,6 @@ build_bookworm() {
     install "debian" "bookworm";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_debian
-	install_portainer
 }
 
 build_trixie() {
@@ -342,9 +316,6 @@ build_trixie() {
     install "debian" "trixie";
 	copy_overlay;
 	clone_repositorys;
-
-	install_docker_debian
-	install_portainer
 
 }
 
@@ -355,10 +326,218 @@ build_sid() {
 	copy_overlay;
 	clone_repositorys;
 
-	install_docker_debian
-	install_portainer
+}
+################## END BUILD CUSTOMIZE END ##################  END BUILD CUSTOMIZE END ################## END BUILD CUSTOMIZE END ##################
+
+
+
+####################### MENU #################################### MENU #################################### MENU ####################################
+print_menu() {
+  local title=$1
+  local selected=$2
+  shift 2
+  local options=("$@")
+  local width=100  # Breite des Menüs
+
+  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m" # Top Border
+  printf "\e[1;34m|%-*s|\e[0m\n" $width "$title" # Title
+  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m" # Border
+
+  echo -e "${RED}==================================================================${NC}"
+  echo -e "${RED}||hexzhen3x7's - Armbian-Build System made for Banana Pi | v0.2 ||${NC}"
+  echo -e "${RED}==================================================================${NC}"
+
+  echo -e "${RED}$title${NC}"
+  for i in "${!options[@]}"; do
+    if [[ $i -eq $selected ]]; then
+      echo -e "\e[1;32m-> ${options[$i]}\e[0m"
+    else
+      echo "   ${options[$i]}"
+    fi
+  done
+
+  echo -e "\e[1;34m+$(printf '%*s' $width | tr ' ' '-')+\e[0m"
 
 }
+
+
+
+# Funktion zum Verwalten des Menüs
+run_menu() {
+  local title=$1
+  shift
+  local options=("$@")
+  local selected=0
+  local key
+
+  while true; do
+    clear
+    print_menu "$title" $selected "${options[@]}"
+    read -rsn1 key
+    case $key in
+      $'\x1b') # ESC-Sequenz
+        read -rsn2 key
+        case $key in
+          '[A') # Pfeil nach oben
+            ((selected--))
+            if [[ $selected -lt 0 ]]; then
+              selected=$((${#options[@]} - 1))
+            fi
+            ;;
+          '[B') # Pfeil nach unten
+            ((selected++))
+            if [[ $selected -ge ${#options[@]} ]]; then
+              selected=0
+            fi
+            ;;
+        esac
+        ;;
+      '') # Enter-Taste
+        case ${options[$selected]} in
+		  # Main Menu
+          "APT Installer")
+            run_menu "APT Installer" "Default" "Debian" "Ubuntu" "Back"
+            ;;
+		  "Default")
+			echo "You selected: Default!"
+			build;
+            ;;
+          "Debian")
+            run_menu "Debian" "Stretch" "Buster" "Bullseye" "Bookworm" "Trixie" "Sid" "Back"
+            ;;
+
+		  # SubMenu -Debian
+		  "Stretch")
+		 	echo "You selected: Stretch!"
+            build_stretch
+            ;;
+		  "Buster")
+		 	echo "You selected: Buster!"
+            build_buster
+            ;;
+		  "Bullseye")
+		 	echo "You selected: Bullseye!"
+			build_bullseye
+            ;;
+		  "Bookworm")
+		 	echo "You selected: Bookworm!"
+            build_bookworm
+            ;;
+		  "Trixie")
+		 	echo "You selected: Trixie!"
+            build_trixie
+            ;;
+		  "Sid")
+		 	echo "You selected: Sid!"
+            build_sid
+            ;;
+          "Ubuntu")
+            run_menu "Ubuntu" "Xenial" "Bionic" "Focal" "Jammy" "Noble" "Back"
+            ;;
+		  # SubMenu - Ubuntu
+		  "Xenial")
+		 	echo "You selected: Stretch!"
+            build_xenial
+            ;;
+		  "Bionic")
+		 	echo "You selected: Buster!"
+            build_bionic
+            ;;
+		  "Focal")
+		 	echo "You selected: Bullseye!"
+            build_focal
+            ;;
+		  "Jammy")
+		 	echo "You selected: Bookworm!"
+            build_jammy
+            ;;
+		  "Noble")
+		 	echo "You selected: Trixie!"
+            build_noble
+            ;;
+		  # Main-Menu
+          "Git Installer")
+            echo "Choosed: Git Installer"
+			run_menu "RPi.GPIO" "BPI-WiringPi" "BPI-WiringPi2" "BPI-WiringPi2-Python" "PiFM" "rpitx" "Back"
+            read -p "Press any key to continue!..."
+            ;;
+          "System-V-Init")
+            echo "Choosed: System-V-Init"
+			run_menu "Integrated LED-Trigger"
+            read -p "Press any key to continue!..."
+            ;;
+			# Sub-Menu V-Init LED Trigger
+		  "Integrated LED-Trigger")
+		    run_menu "Defaults" "Enable" "Disbale" "Remove" "Back"
+			;;
+		  "Defaults")
+		  	echo "Adding System-V-Init Script: set_led_trigger.sh!"
+			read -p "Press any key to continue!..."
+		  	manage_service "set_led_trigger.sh" "defaults"
+			echo "INFO: Your board should blink: Green:heartbeat | Red:CPU0 !"
+			;;
+		  "Enable")
+		  	echo "Enable System-V-Init Script: set_led_trigger.sh!"
+			read -p "Press any key to continue!..."
+		  	manage_service "set_led_trigger.sh" "enable"
+			echo "INFO: Enabled Script!"
+			;;
+		  "Disable")
+		  	echo "Disable System-V-Init Script: set_led_trigger.sh!"
+			read -p "Press any key to continue!..."
+		  	manage_service "set_led_trigger.sh" "disable"
+			echo "INFO: Disabled Script!"
+			;;
+		  "Remove")
+		  	echo "Remove System-V-Init Script: set_led_trigger.sh!"
+			read -p "Press any key to continue!..."
+		  	manage_service "set_led_trigger.sh" "remove"
+			echo "INFO: Removed Script!"
+			;;
+		# END System-V-Init SubMenu
+		# Main Menu
+          "Systemd-Services")
+            echo "Choosed: Systemd-Services"
+            read -p "Press any key to continue!..."
+            ;;
+		  "Back")
+		  	break
+			;;
+          "Exit")
+            break;
+			continue
+            ;;
+          *)
+            echo "You selected: ${options[$selected]}"
+            read -p "Press any key to continue!..."
+            ;;
+
+
+        esac
+        ;;
+    esac
+  done
+}
+
+
+
+run_menu "Customizer - MainMenu" "APT Installer" "Git Installer" "System-V-Init" "Systemd-Services" "Exit"
+
+
+################### END MENU ################################# END MENU #################################### END MENU ####################################
+
+
+############## INSTALLING CUSTOM APT-PACKAGES ############# INSTALLING CUSTOM APT-PACKAGES #############  INSTALLING CUSTOM APT-PACKAGES #################################################
+
+
+
+
+
+
+############## END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ############# END INSTALLING CUSTOM APT-PACKAGES END ##########################
+
+##########################################################################################################################################################################################
+
 
 
 
@@ -394,15 +573,29 @@ Main() {
 			build_noble;
 			;;
 	esac
-}
+} # Main
 
 InstallOpenMediaVault() {
+	# use this routine to create a Debian based fully functional OpenMediaVault
+	# image (OMV 3 on Jessie, OMV 4 with Stretch). Use of mainline kernel highly
+	# recommended!
+	#
+	# Please note that this variant changes Armbian default security
+	# policies since you end up with root password 'openmediavault' which
+	# you have to change yourself later. SSH login as root has to be enabled
+	# through OMV web UI first
+	#
+	# This routine is based on idea/code courtesy Benny Stark. For fixes,
+	# discussion and feature requests please refer to
+	# https://forum.armbian.com/index.php?/topic/2644-openmediavault-3x-customize-imagesh/
+
 	echo root:openmediavault | chpasswd
 	rm /root/.not_logged_in_yet
 	. /etc/default/cpufrequtils
 	export LANG=C LC_ALL="en_US.UTF-8"
 	export DEBIAN_FRONTEND=noninteractive
 	export APT_LISTCHANGES_FRONTEND=none
+
 	case ${RELEASE} in
 		jessie)
 			OMV_Name="erasmus"
@@ -413,6 +606,8 @@ InstallOpenMediaVault() {
 			OMV_EXTRAS_URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master/openmediavault-omvextrasorg_latest_all4.deb"
 			;;
 	esac
+
+	# Add OMV source.list and Update System
 	cat > /etc/apt/sources.list.d/openmediavault.list <<- EOF
 	deb https://openmediavault.github.io/packages/ ${OMV_Name} main
 	## Uncomment the following line to add software from the proposed repository.
@@ -423,6 +618,7 @@ InstallOpenMediaVault() {
 	# deb https://openmediavault.github.io/packages/ ${OMV_Name} partner
 	EOF
 
+	# Add OMV and OMV Plugin developer keys, add Cloudshell 2 repo for XU4
 	if [ "${BOARD}" = "odroidxu4" ]; then
 		add-apt-repository -y ppa:kyle1117/ppa
 		sed -i 's/jessie/xenial/' /etc/apt/sources.list.d/kyle1117-ppa-jessie.list
@@ -432,12 +628,15 @@ InstallOpenMediaVault() {
 	apt-get --yes --force-yes --allow-unauthenticated install openmediavault-keyring
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7AA630A1EDEE7D73
 	apt-get update
+
+	# install debconf-utils, postfix and OMV
 	HOSTNAME="${BOARD}"
 	debconf-set-selections <<< "postfix postfix/mailname string ${HOSTNAME}"
 	debconf-set-selections <<< "postfix postfix/main_mailer_type string 'No configuration'"
 	apt-get --yes --force-yes --allow-unauthenticated  --fix-missing --no-install-recommends \
 		-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install \
 		debconf-utils postfix
+	# move newaliases temporarely out of the way (see Ubuntu bug 1531299)
 	cp -p /usr/bin/newaliases /usr/bin/newaliases.bak && ln -sf /bin/true /usr/bin/newaliases
 	sed -i -e "s/^::1         localhost.*/::1         ${HOSTNAME} localhost ip6-localhost ip6-loopback/" \
 		-e "s/^127.0.0.1   localhost.*/127.0.0.1   ${HOSTNAME} localhost/" /etc/hosts
@@ -446,10 +645,14 @@ InstallOpenMediaVault() {
 	apt-get --yes --force-yes --allow-unauthenticated  --fix-missing --no-install-recommends \
 		-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install \
 		openmediavault
+
+	# install OMV extras, enable folder2ram and tweak some settings
 	FILE=$(mktemp)
 	wget "$OMV_EXTRAS_URL" -qO $FILE && dpkg -i $FILE
 
 	/usr/sbin/omv-update
+	# Install flashmemory plugin and netatalk by default, use nice logo for the latter,
+	# tweak some OMV settings
 	. /usr/share/openmediavault/scripts/helper-functions
 	apt-get -y -q install openmediavault-netatalk openmediavault-flashmemory
 	AFP_Options="mimic model = Macmini"
@@ -471,7 +674,11 @@ InstallOpenMediaVault() {
 	done
 	/sbin/folder2ram -enablesystemd || true
 	sed -i 's|-j /var/lib/rrdcached/journal/ ||' /etc/init.d/rrdcached
+
+	# Fix multiple sources entry on ARM with OMV4
 	sed -i '/stretch-backports/d' /etc/apt/sources.list
+
+	# rootfs resize to 7.3G max and adding omv-initsystem to firstrun -- q&d but shouldn't matter
 	echo 15500000s >/root/.rootfs_resize
 	sed -i '/systemctl\ disable\ armbian-firstrun/i \
 	mv /usr/bin/newaliases.bak /usr/bin/newaliases \
@@ -487,10 +694,19 @@ InstallOpenMediaVault() {
 	lsusb | egrep -q "0b95:1790|0b95:178a|0df6:0072" || sed -i "/ax88179_178a/d" /etc/modules' /usr/lib/armbian/armbian-firstrun
 	sed -i '/systemctl\ disable\ armbian-firstrun/a \
 	sleep 30 && sync && reboot' /usr/lib/armbian/armbian-firstrun
+
+	# add USB3 Gigabit Ethernet support
 	echo -e "r8152\nax88179_178a" >>/etc/modules
+
+	# Special treatment for ODROID-XU4 (and later Amlogic S912, RK3399 and other big.LITTLE
+	# based devices). Move all NAS daemons to the big cores. With ODROID-XU4 a lot
+	# more tweaks are needed. CS2 repo added, CS1 workaround added, coherent_pool=1M
+	# set: https://forum.odroid.com/viewtopic.php?f=146&t=26016&start=200#p197729
+	# (latter not necessary any more since we fixed it upstream in Armbian)
 	case ${BOARD} in
 		odroidxu4)
 			HMP_Fix='; taskset -c -p 4-7 $i '
+			# Cloudshell stuff (fan, lcd, missing serials on 1st CS2 batch)
 			echo "H4sIAKdXHVkCA7WQXWuDMBiFr+eveOe6FcbSrEIH3WihWx0rtVbUFQqCqAkYGhJn
 			tF1x/vep+7oebDfh5DmHwJOzUxwzgeNIpRp9zWRegDPznya4VDlWTXXbpS58XJtD
 			i7ICmFBFxDmgI6AXSLgsiUop54gnBC40rkoVA9rDG0SHHaBHPQx16GN3Zs/XqxBD
@@ -515,30 +731,44 @@ InstallOpenMediaVault() {
 	echo "* * * * * root for i in \`pgrep \"ftpd|nfsiod|smbd|afpd|cnid\"\` ; do ionice -c1 -p \$i ${HMP_Fix}; done >/dev/null 2>&1" \
 		>/etc/cron.d/make_nas_processes_faster
 	chmod 600 /etc/cron.d/make_nas_processes_faster
+
+	# add SATA port multiplier hint if appropriate
 	[ "${LINUXFAMILY}" = "sunxi" ] && \
 		echo -e "#\n# If you want to use a SATA PM add \"ahci_sunxi.enable_pmp=1\" to bootargs above" \
 		>>/boot/boot.cmd
+
+	# Filter out some log messages
 	echo ':msg, contains, "do ionice -c1" ~' >/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "action " ~' >>/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "netsnmp_assert" ~' >>/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "Failed to initiate sched scan" ~' >>/etc/rsyslog.d/omv-armbian.conf
 
+	# Fix little python bug upstream Debian 9 obviously ignores
 	if [ -f /usr/lib/python3.5/weakref.py ]; then
 		wget -O /usr/lib/python3.5/weakref.py \
 		https://raw.githubusercontent.com/python/cpython/9cd7e17640a49635d1c1f8c2989578a8fc2c1de6/Lib/weakref.py
 	fi
+
+	# clean up and force password change on first boot
 	umount /proc/mdstat
 	chage -d 0 root
-}
+} # InstallOpenMediaVault
 
 UnattendedStorageBenchmark() {
+	# Function to create Armbian images ready for unattended storage performance testing.
+	# Useful to use the same OS image with a bunch of different SD cards or eMMC modules
+	# to test for performance differences without wasting too much time.
+
 	rm /root/.not_logged_in_yet
+
 	apt-get -qq install time
+
 	wget -qO /usr/local/bin/sd-card-bench.sh https://raw.githubusercontent.com/ThomasKaiser/sbc-bench/master/sd-card-bench.sh
 	chmod 755 /usr/local/bin/sd-card-bench.sh
+
 	sed -i '/^exit\ 0$/i \
 	/usr/local/bin/sd-card-bench.sh &' /etc/rc.local
-}
+} # UnattendedStorageBenchmark
 
 InstallAdvancedDesktop()
 {
@@ -546,6 +776,6 @@ InstallAdvancedDesktop()
 	[[ -f /usr/share/doc/avahi-daemon/examples/sftp-ssh.service ]] && cp /usr/share/doc/avahi-daemon/examples/sftp-ssh.service /etc/avahi/services/
 	[[ -f /usr/share/doc/avahi-daemon/examples/ssh.service ]] && cp /usr/share/doc/avahi-daemon/examples/ssh.service /etc/avahi/services/
 	apt clean
-}
+} # InstallAdvancedDesktop
 
 Main "$@"

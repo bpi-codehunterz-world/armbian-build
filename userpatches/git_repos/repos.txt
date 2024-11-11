@@ -1,4 +1,5 @@
-https://github.com/bpi-codehunterz-world/RPi.GPIO
-https://github.com/bpi-codehunterz-world/BPI-WiringPi
-https://github.com/bpi-codehunterz-world/BPI-WiringPi2
-https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
+https://github.com/bpi-codehunterz-world/RPi.GPIO.git
+https://github.com/bpi-codehunterz-world/BPI-WiringPi.git
+https://github.com/bpi-codehunterz-world/BPI-WiringPi2.git
+https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python.git
+https://github.com/LionSec/xerosploit.git
