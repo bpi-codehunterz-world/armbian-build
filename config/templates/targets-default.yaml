@@ -10,8 +10,8 @@ targets:
     vars:
       BUILD_MINIMAL: "no"
       BUILD_DESKTOP: "yes"
-      DESKTOP_ENVIRONMENT: "kde-plasma"
-      DESKTOP_ENVIRONMENT_CONFIG_NAME: "config_full"
+      DESKTOP_ENVIRONMENT: "xfce"
+      DESKTOP_ENVIRONMENT_CONFIG_NAME: "config_base"
       RELEASE: "jammy"
     items-from-inventory:
       not-eos-with-video: yes # not-eos boards, all branches, only those without HAS_VIDEO_OUTPUT="no"

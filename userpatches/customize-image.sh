@@ -26,42 +26,6 @@ NC='\033[0m'
 
 
 
-install_docker_debian() {
-	# Add Docker's official GPG key:
-	sudo apt-get update
-	sudo apt-get install ca-certificates curl
-	sudo install -m 0755 -d /etc/apt/keyrings
-	sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-	sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-	# Add the repository to Apt sources:
-	echo \
-  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  	sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	sudo apt-get update
-	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-}
-
-install_docker_ubuntu() {
-	# Add Docker's official GPG key:
-	sudo apt-get update
-	sudo apt-get install ca-certificates curl
-	sudo install -m 0755 -d /etc/apt/keyrings
-	sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-	sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-	# Add the repository to Apt sources:
-	echo \
-  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  	sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	sudo apt-get update
-	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-
-}
-
-
 
 install() {
 	local distro=$1
@@ -109,8 +73,40 @@ install_packages() {
   done < "$package_file"
 }
 
+# install_docker_debian() {
+# 	# Add Docker's official GPG key:
+# 	 apt-get update
+# 	 apt-get install ca-certificates curl
+# 	 install -m 0755 -d /etc/apt/keyrings
+# 	 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+# 	 chmod a+r /etc/apt/keyrings/docker.asc
 
+# 	# Add the repository to Apt sources:
+# 	echo \
+#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+# 	 apt-get update
+# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# }
 
+# install_docker_ubuntu() {
+# 	# Add Docker's official GPG key:
+# 	 apt-get update
+# 	 apt-get install ca-certificates curl
+# 	 install -m 0755 -d /etc/apt/keyrings
+# 	 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+# 	 chmod a+r /etc/apt/keyrings/docker.asc
+
+# 	# Add the repository to Apt sources:
+# 	echo \
+#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+# 	 apt-get update
+# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# }
 
 
 git_repos() {
@@ -123,40 +119,15 @@ git_repos() {
 	fi
 
 	while IFS= read -r repo; do
+	if [[ -n "$repo" ]]; then
 	    echo "Cloning $repo..."
 		mkdir -p /root/libarys
 		cd /root/libarys
 	    git clone "$repo"
+	fi
 	done < "$git_repos"
 }
 
-
-
-board_determiner() {
-	echo -e "${YELLOW}DETECTED: ${NC} ${GREEN} $BOARD ${NC} !"
-	if [ "$BOARD" == "bananapim2berry" ] || [ "$BOARD" == "bananapim2berry" ]; then
-
-		echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
-
-		dirs=("/var/lib" "/usr/local/bin")
-
-		for dir in "${dirs[@]}"; do
-		  mkdir -p "$dir"
-		done
-
-	    cp -r /tmp/overlay/bananapi /var/lib/
-		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
-
-		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh")
-
-		for path in "${paths[@]}"; do
-		  chmod 777 -R "$path"
-		done
-
-		manage_service "set_led_trigger.sh" "defaults"
-
-
-}
 
 manage_service() {
   local scriptname=$1
@@ -181,6 +152,46 @@ manage_service() {
 }
 
 
+
+
+
+
+
+
+
+
+
+board_determiner() {
+	echo "BOARD DETERMINER >> "
+	# local BOARD=$3
+	# if [ "$BOARD" == "bananapim2berry" ] || [ "$BOARD" == "bananapim2berry" ]; then
+
+	if [ "$BOARD" != "bananapim2ultra" ] && [ "$BOARD" != "bananapim2berry" ]; then
+    	echo "Variable ist weder wert1 noch wert2"
+
+	else
+	    echo "DETECTED: $BOARD"
+		dirs=("/var/lib" "/usr/local/bin" "/etc/init.d/")
+
+		for dir in "${dirs[@]}"; do
+		  mkdir -p "$dir"
+		done
+
+	    cp -r /tmp/overlay/bananapi /var/lib/
+		cp -r /tmp/overlay/scripts/set_led_trigger.sh /etc/init.d/set_led_trigger.sh
+
+		paths=("/var/lib/bananapi" "/etc/init.d/set_led_trigger.sh")
+
+		for path in "${paths[@]}"; do
+		  chmod 777 -R "$path"
+		done
+
+		manage_service "set_led_trigger.sh" "defaults"
+	fi
+
+}
+
+
 copy_overlay() {
 	echo -e "${RED}INFO > COPYING OVERLAY TO ROOTFS!${NC}"
 
@@ -190,11 +201,11 @@ copy_overlay() {
 		mkdir -p "$dir"
 	done
 
-	paths=("")
+	# paths=("")
 
-	for path in "${paths[@]}"; do
-		chmod 777 -R "$path"
-	done
+	# for path in "${paths[@]}"; do
+	# 	chmod 777 -R "$path"
+	# done
 }
 
 
@@ -285,10 +296,10 @@ clone_repositorys() {
 
 	cd RPi.GPIO
 	groupadd -f -r gpio
-	cat <<EOF >> '/etc/udev/rules.d/99-gpio.rules','w'
-	SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
-    SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
-	SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value'"
+cat <<EOF >> '/etc/udev/rules.d/99-gpio.rules','w'
+SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
+SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value'"
 EOF
 	udevadm control --reload-rules
 	udevadm trigger
@@ -299,7 +310,7 @@ EOF
 		python setup.py install
 	else
 	    echo "Python is not available"
-		continue
+
 	fi
 	if which python2 &> /dev/null
 	then
@@ -307,7 +318,7 @@ EOF
 		python2 setup.py install
 	else
 	    echo "Python2 is not available"
-		continue
+
 	fi
 
 
@@ -322,7 +333,7 @@ build() {
 
     install "default";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
@@ -334,94 +345,94 @@ build() {
 build_xenial() {
     apt-get update;
 
-	install "default"
-    install "ubuntu" "xenial";
+	# install "default"
+	install "ubuntu" "xenial";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_ubuntu
+	#install_docker_ubuntu
 }
 
 build_bionic() {
 	apt-get update;
 
-	install "default"
-    install "ubuntu" "bionic";
+	# install "default"
+	install "ubuntu" "bionic";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_ubuntu
+	#install_docker_ubuntu
 }
 
 build_focal() {
 	apt-get update;
 
-	install "default"
-    install "ubuntu" "focal";
+	# install "default"
+	install "ubuntu" "focal";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_ubuntu
+	#install_docker_ubuntu
 
 }
 
 build_jammy() {
 	apt-get update;
 
-	install "default"
-    install "ubuntu" "jammy";
+	# install "default"
+	install "ubuntu" "jammy";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_ubuntu
+	#install_docker_ubuntu
 
 }
 
 build_noble() {
 	apt-get update;
 
-	install "default"
-    install "ubuntu" "noble";
+	# install "default"
+	install "ubuntu" "noble";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_ubuntu
+	#install_docker_ubuntu
 }
 
 build_stretch() {
 	apt-get update;
 
-	install "default"
-    install "debian" "stretch";
+	# install "default"
+	install "debian" "stretch";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 }
 
 build_buster() {
 	apt-get update;
 
-	install "default"
-    install "debian" "buster";
+	# install "default"
+	install "debian" "buster";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 }
 
 build_bullseye() {
@@ -433,56 +444,56 @@ build_bullseye() {
 	apt-key update
 	apt-get update;
 
-	install "default"
-    install "debian" "bullseye";
+	# install "default"
+	install "debian" "bullseye";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 
 }
 
 build_bookworm() {
     apt-get update;
 
-	install "default"
-    install "debian" "bookworm";
+	# install "default"
+	install "debian" "bookworm";
 
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 }
 
 build_trixie() {
     apt-get update;
 
-	install "default"
-    install "debian" "trixie";
+	# install "default"
+	install "debian" "trixie";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 
 }
 
 build_sid() {
     apt-get update;
 
-	install "default"
-    install "debian" "sid";
+	# install "default"
+	install "debian" "sid";
 
-	copy_overlay;
+	#copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	install_docker_debian
+	#install_docker_debian
 
 }
 
@@ -523,12 +534,26 @@ Main() {
 }
 
 InstallOpenMediaVault() {
+	# use this routine to create a Debian based fully functional OpenMediaVault
+	# image (OMV 3 on Jessie, OMV 4 with Stretch). Use of mainline kernel highly
+	# recommended!
+	#
+	# Please note that this variant changes Armbian default security
+	# policies since you end up with root password 'openmediavault' which
+	# you have to change yourself later. SSH login as root has to be enabled
+	# through OMV web UI first
+	#
+	# This routine is based on idea/code courtesy Benny Stark. For fixes,
+	# discussion and feature requests please refer to
+	# https://forum.armbian.com/index.php?/topic/2644-openmediavault-3x-customize-imagesh/
+
 	echo root:openmediavault | chpasswd
 	rm /root/.not_logged_in_yet
 	. /etc/default/cpufrequtils
 	export LANG=C LC_ALL="en_US.UTF-8"
 	export DEBIAN_FRONTEND=noninteractive
 	export APT_LISTCHANGES_FRONTEND=none
+
 	case ${RELEASE} in
 		jessie)
 			OMV_Name="erasmus"
@@ -539,6 +564,8 @@ InstallOpenMediaVault() {
 			OMV_EXTRAS_URL="https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master/openmediavault-omvextrasorg_latest_all4.deb"
 			;;
 	esac
+
+	# Add OMV source.list and Update System
 	cat > /etc/apt/sources.list.d/openmediavault.list <<- EOF
 	deb https://openmediavault.github.io/packages/ ${OMV_Name} main
 	## Uncomment the following line to add software from the proposed repository.
@@ -549,6 +576,7 @@ InstallOpenMediaVault() {
 	# deb https://openmediavault.github.io/packages/ ${OMV_Name} partner
 	EOF
 
+	# Add OMV and OMV Plugin developer keys, add Cloudshell 2 repo for XU4
 	if [ "${BOARD}" = "odroidxu4" ]; then
 		add-apt-repository -y ppa:kyle1117/ppa
 		sed -i 's/jessie/xenial/' /etc/apt/sources.list.d/kyle1117-ppa-jessie.list
@@ -558,12 +586,15 @@ InstallOpenMediaVault() {
 	apt-get --yes --force-yes --allow-unauthenticated install openmediavault-keyring
 	apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7AA630A1EDEE7D73
 	apt-get update
+
+	# install debconf-utils, postfix and OMV
 	HOSTNAME="${BOARD}"
 	debconf-set-selections <<< "postfix postfix/mailname string ${HOSTNAME}"
 	debconf-set-selections <<< "postfix postfix/main_mailer_type string 'No configuration'"
 	apt-get --yes --force-yes --allow-unauthenticated  --fix-missing --no-install-recommends \
 		-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install \
 		debconf-utils postfix
+	# move newaliases temporarely out of the way (see Ubuntu bug 1531299)
 	cp -p /usr/bin/newaliases /usr/bin/newaliases.bak && ln -sf /bin/true /usr/bin/newaliases
 	sed -i -e "s/^::1         localhost.*/::1         ${HOSTNAME} localhost ip6-localhost ip6-loopback/" \
 		-e "s/^127.0.0.1   localhost.*/127.0.0.1   ${HOSTNAME} localhost/" /etc/hosts
@@ -572,10 +603,14 @@ InstallOpenMediaVault() {
 	apt-get --yes --force-yes --allow-unauthenticated  --fix-missing --no-install-recommends \
 		-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install \
 		openmediavault
+
+	# install OMV extras, enable folder2ram and tweak some settings
 	FILE=$(mktemp)
 	wget "$OMV_EXTRAS_URL" -qO $FILE && dpkg -i $FILE
 
 	/usr/sbin/omv-update
+	# Install flashmemory plugin and netatalk by default, use nice logo for the latter,
+	# tweak some OMV settings
 	. /usr/share/openmediavault/scripts/helper-functions
 	apt-get -y -q install openmediavault-netatalk openmediavault-flashmemory
 	AFP_Options="mimic model = Macmini"
@@ -597,7 +632,11 @@ InstallOpenMediaVault() {
 	done
 	/sbin/folder2ram -enablesystemd || true
 	sed -i 's|-j /var/lib/rrdcached/journal/ ||' /etc/init.d/rrdcached
+
+	# Fix multiple sources entry on ARM with OMV4
 	sed -i '/stretch-backports/d' /etc/apt/sources.list
+
+	# rootfs resize to 7.3G max and adding omv-initsystem to firstrun -- q&d but shouldn't matter
 	echo 15500000s >/root/.rootfs_resize
 	sed -i '/systemctl\ disable\ armbian-firstrun/i \
 	mv /usr/bin/newaliases.bak /usr/bin/newaliases \
@@ -613,10 +652,19 @@ InstallOpenMediaVault() {
 	lsusb | egrep -q "0b95:1790|0b95:178a|0df6:0072" || sed -i "/ax88179_178a/d" /etc/modules' /usr/lib/armbian/armbian-firstrun
 	sed -i '/systemctl\ disable\ armbian-firstrun/a \
 	sleep 30 && sync && reboot' /usr/lib/armbian/armbian-firstrun
+
+	# add USB3 Gigabit Ethernet support
 	echo -e "r8152\nax88179_178a" >>/etc/modules
+
+	# Special treatment for ODROID-XU4 (and later Amlogic S912, RK3399 and other big.LITTLE
+	# based devices). Move all NAS daemons to the big cores. With ODROID-XU4 a lot
+	# more tweaks are needed. CS2 repo added, CS1 workaround added, coherent_pool=1M
+	# set: https://forum.odroid.com/viewtopic.php?f=146&t=26016&start=200#p197729
+	# (latter not necessary any more since we fixed it upstream in Armbian)
 	case ${BOARD} in
 		odroidxu4)
 			HMP_Fix='; taskset -c -p 4-7 $i '
+			# Cloudshell stuff (fan, lcd, missing serials on 1st CS2 batch)
 			echo "H4sIAKdXHVkCA7WQXWuDMBiFr+eveOe6FcbSrEIH3WihWx0rtVbUFQqCqAkYGhJn
 			tF1x/vep+7oebDfh5DmHwJOzUxwzgeNIpRp9zWRegDPznya4VDlWTXXbpS58XJtD
 			i7ICmFBFxDmgI6AXSLgsiUop54gnBC40rkoVA9rDG0SHHaBHPQx16GN3Zs/XqxBD
@@ -641,30 +689,44 @@ InstallOpenMediaVault() {
 	echo "* * * * * root for i in \`pgrep \"ftpd|nfsiod|smbd|afpd|cnid\"\` ; do ionice -c1 -p \$i ${HMP_Fix}; done >/dev/null 2>&1" \
 		>/etc/cron.d/make_nas_processes_faster
 	chmod 600 /etc/cron.d/make_nas_processes_faster
+
+	# add SATA port multiplier hint if appropriate
 	[ "${LINUXFAMILY}" = "sunxi" ] && \
 		echo -e "#\n# If you want to use a SATA PM add \"ahci_sunxi.enable_pmp=1\" to bootargs above" \
 		>>/boot/boot.cmd
+
+	# Filter out some log messages
 	echo ':msg, contains, "do ionice -c1" ~' >/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "action " ~' >>/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "netsnmp_assert" ~' >>/etc/rsyslog.d/omv-armbian.conf
 	echo ':msg, contains, "Failed to initiate sched scan" ~' >>/etc/rsyslog.d/omv-armbian.conf
 
+	# Fix little python bug upstream Debian 9 obviously ignores
 	if [ -f /usr/lib/python3.5/weakref.py ]; then
 		wget -O /usr/lib/python3.5/weakref.py \
 		https://raw.githubusercontent.com/python/cpython/9cd7e17640a49635d1c1f8c2989578a8fc2c1de6/Lib/weakref.py
 	fi
+
+	# clean up and force password change on first boot
 	umount /proc/mdstat
 	chage -d 0 root
-}
+} # InstallOpenMediaVault
 
 UnattendedStorageBenchmark() {
+	# Function to create Armbian images ready for unattended storage performance testing.
+	# Useful to use the same OS image with a bunch of different SD cards or eMMC modules
+	# to test for performance differences without wasting too much time.
+
 	rm /root/.not_logged_in_yet
+
 	apt-get -qq install time
+
 	wget -qO /usr/local/bin/sd-card-bench.sh https://raw.githubusercontent.com/ThomasKaiser/sbc-bench/master/sd-card-bench.sh
 	chmod 755 /usr/local/bin/sd-card-bench.sh
+
 	sed -i '/^exit\ 0$/i \
 	/usr/local/bin/sd-card-bench.sh &' /etc/rc.local
-}
+} # UnattendedStorageBenchmark
 
 InstallAdvancedDesktop()
 {
@@ -672,6 +734,6 @@ InstallAdvancedDesktop()
 	[[ -f /usr/share/doc/avahi-daemon/examples/sftp-ssh.service ]] && cp /usr/share/doc/avahi-daemon/examples/sftp-ssh.service /etc/avahi/services/
 	[[ -f /usr/share/doc/avahi-daemon/examples/ssh.service ]] && cp /usr/share/doc/avahi-daemon/examples/ssh.service /etc/avahi/services/
 	apt clean
-}
+} # InstallAdvancedDesktop
 
 Main "$@"

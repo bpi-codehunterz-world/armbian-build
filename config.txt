@@ -1,8 +1,0 @@
-BOARD=bananapim2berry
-BRANCH=legacy
-RELEASE=jammy
-BUILD_DESKTOP=yes
-DESKTOP_APPGROUPS_SELECTED=./config/desktop/desktop_appgroups_selected.conf
-DESKTOP_ENVIRONMENT_CONFIG_NAME=./config/desktop/desktop_environment_config.conf
-RUN_SCRIPTS=yes
-

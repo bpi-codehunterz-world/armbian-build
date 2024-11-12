@@ -93,7 +93,7 @@ case "$1" in
 			esac
 
 			# trigger red or blue LED as user feedback
-			echo heartbeat >/sys/class/leds/*red*/trigger 2>/dev/null || echo heartbeat >/sys/class/leds/*green*/trigger 2>/dev/null
+			echo heartbeat >/sys/class/leds/*red*/trigger 2>/dev/null || echo heartbeat >/sys/class/leds/*blue*/trigger 2>/dev/null
 			;;
 
 		x86|arm64)
