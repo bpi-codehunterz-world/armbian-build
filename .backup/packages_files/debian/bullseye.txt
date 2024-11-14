@@ -35,6 +35,7 @@ certbot
 nginx-full
 aircrack-ng
 wireshark
+wireshark
 burpsuite
 hydra
 openvas

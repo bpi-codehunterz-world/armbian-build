@@ -73,40 +73,40 @@ install_packages() {
   done < "$package_file"
 }
 
-# install_docker_debian() {
-# 	# Add Docker's official GPG key:
-# 	 apt-get update
-# 	 apt-get install ca-certificates curl
-# 	 install -m 0755 -d /etc/apt/keyrings
-# 	 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-# 	 chmod a+r /etc/apt/keyrings/docker.asc
+install_docker_debian() {
+	# Add Docker's official GPG key:
+	 apt-get update
+	 apt-get install ca-certificates curl
+	 install -m 0755 -d /etc/apt/keyrings
+	 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+	 chmod a+r /etc/apt/keyrings/docker.asc
 
-# 	# Add the repository to Apt sources:
-# 	echo \
-#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
-# 	 apt-get update
-# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-# }
+	# Add the repository to Apt sources:
+	echo \
+  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+	 apt-get update
+	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
 
-# install_docker_ubuntu() {
-# 	# Add Docker's official GPG key:
-# 	 apt-get update
-# 	 apt-get install ca-certificates curl
-# 	 install -m 0755 -d /etc/apt/keyrings
-# 	 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-# 	 chmod a+r /etc/apt/keyrings/docker.asc
+install_docker_ubuntu() {
+	# Add Docker's official GPG key:
+	 apt-get update
+	 apt-get install ca-certificates curl
+	 install -m 0755 -d /etc/apt/keyrings
+	 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+	 chmod a+r /etc/apt/keyrings/docker.asc
 
-# 	# Add the repository to Apt sources:
-# 	echo \
-#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
-# 	 apt-get update
-# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+	# Add the repository to Apt sources:
+	echo \
+  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+	 apt-get update
+	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# }
+}
 
 
 git_repos() {
@@ -216,9 +216,48 @@ clone_repositorys() {
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
 
+	git clone https://github.com/bpi-codehunterz-world/RPi.GPIO
+	sleep 2
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2
+	sleep 2
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
+	sleep 2
+
+	chmod 777 -R ../**
+
+	echo -e "INFO: Installing BPI-WiringPi2!"
+	cd BPI-WiringPi2
+	./build
+	echo -e "/usr/local/lib" >> /etc/ld.so.conf
+	ldconfig
+	cd wiringPi
+  	make static
+  	make install-static
+
+	sleep 2
+
+	cd ..
+	cd ..
+	echo -e "INFO: Installing RPi.GPIO!"
+    cd RPi.GPIO
+	python3 setup.py install
+	pip3 install .
+
+	sleep 2
+
+	cd ..
+	echo -e "INFO: Installing BPI-WiringPi2-Python!"
+	cd BPI-WiringPi2-Python
+	swig -python wiringpi.i
+	python3 setup.py build install
+	cd ..
+
+
+
 	git_repos; # Cloning Github Repositorys
 
-	chmod 777 -R /usr/share/libarys
+	chmod 777 -R /root/libarys
+	cd /root/libarys
 
 	cd BPI-WiringPi
 	./build
@@ -313,7 +352,7 @@ build_xenial() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_bionic() {
@@ -326,7 +365,7 @@ build_bionic() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_focal() {
@@ -339,7 +378,7 @@ build_focal() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 
 }
 
@@ -353,7 +392,7 @@ build_jammy() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 
 }
 
@@ -367,7 +406,7 @@ build_noble() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_stretch() {
@@ -380,7 +419,7 @@ build_stretch() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_buster() {
@@ -393,7 +432,7 @@ build_buster() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_bullseye() {
@@ -412,7 +451,7 @@ build_bullseye() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 
@@ -427,7 +466,7 @@ build_bookworm() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_trixie() {
@@ -440,7 +479,7 @@ build_trixie() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 
@@ -454,7 +493,7 @@ build_sid() {
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 

@@ -34,6 +34,12 @@ yarn
 certbot
 nginx-full
 aircrack-ng
+wireshark
+wireshark
+burpsuite
+hydra
+openvas
+macchanger
 net-tools
 traceroute
 whois
@@ -41,3 +47,11 @@ nmap
 fail2ban
 ufw
 openssh-server
+ffmpeg
+vlc
+hdparm
+docker-ce
+docker-ce-cli
+containerd.io
+docker-buildx-plugin
+docker-compose-plugin

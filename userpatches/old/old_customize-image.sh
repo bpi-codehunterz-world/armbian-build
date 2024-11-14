@@ -25,6 +25,63 @@ NC='\033[0m'
 
 
 
+manage_service() {
+  local scriptname=$1
+  local option=$2
+
+  if [[ -z "$scriptname" || -z "$option" ]]; then
+    echo "Usage: manage_service <scriptname> <option>"
+    echo "Options: defaults, remove, disable, enable"
+    return 1
+  fi
+
+  case $option in
+    defaults|remove|disable|enable)
+      sudo update-rc.d "$scriptname" "$option"
+      ;;
+    *)
+      echo "Invalid option: $option"
+      echo "Options: defaults, remove, disable, enable"
+      return 1
+      ;;
+  esac
+}
+
+install_docker_debian() {
+	# Add Docker's official GPG key:
+	 apt-get update
+	 apt-get install ca-certificates curl
+	 install -m 0755 -d /etc/apt/keyrings
+	 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+	 chmod a+r /etc/apt/keyrings/docker.asc
+
+	# Add the repository to Apt sources:
+	echo \
+  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+	 apt-get update
+	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
+install_docker_ubuntu() {
+	# Add Docker's official GPG key:
+	 apt-get update
+	 apt-get install ca-certificates curl
+	 install -m 0755 -d /etc/apt/keyrings
+	 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+	 chmod a+r /etc/apt/keyrings/docker.asc
+
+	# Add the repository to Apt sources:
+	echo \
+  	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  	 tee /etc/apt/sources.list.d/docker.list > /dev/null
+	 apt-get update
+	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+}
+
 
 
 install() {
@@ -73,40 +130,8 @@ install_packages() {
   done < "$package_file"
 }
 
-# install_docker_debian() {
-# 	# Add Docker's official GPG key:
-# 	 apt-get update
-# 	 apt-get install ca-certificates curl
-# 	 install -m 0755 -d /etc/apt/keyrings
-# 	 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-# 	 chmod a+r /etc/apt/keyrings/docker.asc
 
-# 	# Add the repository to Apt sources:
-# 	echo \
-#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
-# 	 apt-get update
-# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-# }
 
-# install_docker_ubuntu() {
-# 	# Add Docker's official GPG key:
-# 	 apt-get update
-# 	 apt-get install ca-certificates curl
-# 	 install -m 0755 -d /etc/apt/keyrings
-# 	 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-# 	 chmod a+r /etc/apt/keyrings/docker.asc
-
-# 	# Add the repository to Apt sources:
-# 	echo \
-#   	"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-#   	$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-#   	 tee /etc/apt/sources.list.d/docker.list > /dev/null
-# 	 apt-get update
-# 	 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# }
 
 
 git_repos() {
@@ -119,51 +144,17 @@ git_repos() {
 	fi
 
 	while IFS= read -r repo; do
-	if [[ -n "$repo" ]]; then
 	    echo "Cloning $repo..."
 		mkdir -p /root/libarys
 		cd /root/libarys
 	    git clone "$repo"
-	fi
 	done < "$git_repos"
 }
 
 
-manage_service() {
-  local scriptname=$1
-  local option=$2
-
-  if [[ -z "$scriptname" || -z "$option" ]]; then
-    echo "Usage: manage_service <scriptname> <option>"
-    echo "Options: defaults, remove, disable, enable"
-    return 1
-  fi
-
-  case $option in
-    defaults|remove|disable|enable)
-      sudo update-rc.d "$scriptname" "$option"
-      ;;
-    *)
-      echo "Invalid option: $option"
-      echo "Options: defaults, remove, disable, enable"
-      return 1
-      ;;
-  esac
-}
-
-
-
-
-
-
-
-
-
-
 
 board_determiner() {
-	echo "BOARD DETERMINER >> "
-	# local BOARD=$3
+	local BOARD=$3
 	# if [ "$BOARD" == "bananapim2berry" ] || [ "$BOARD" == "bananapim2berry" ]; then
 
 	if [ "$BOARD" != "bananapim2ultra" ] && [ "$BOARD" != "bananapim2berry" ]; then
@@ -216,9 +207,48 @@ clone_repositorys() {
 	mkdir -p /usr/share/libarys
 	cd /usr/share/libarys
 
+	git clone https://github.com/bpi-codehunterz-world/RPi.GPIO
+	sleep 2
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2
+	sleep 2
+	git clone https://github.com/bpi-codehunterz-world/BPI-WiringPi2-Python
+	sleep 2
+
+	chmod 777 -R ../**
+
+	echo -e "INFO: Installing BPI-WiringPi2!"
+	cd BPI-WiringPi2
+	./build
+	echo -e "/usr/local/lib" >> /etc/ld.so.conf
+	ldconfig
+	cd wiringPi
+  	make static
+  	make install-static
+
+	sleep 2
+
+	cd ..
+	cd ..
+	echo -e "INFO: Installing RPi.GPIO!"
+    cd RPi.GPIO
+	python3 setup.py install
+	pip3 install .
+
+	sleep 2
+
+	cd ..
+	echo -e "INFO: Installing BPI-WiringPi2-Python!"
+	cd BPI-WiringPi2-Python
+	swig -python wiringpi.i
+	python3 setup.py build install
+	cd ..
+
+
+
 	git_repos; # Cloning Github Repositorys
 
-	chmod 777 -R /usr/share/libarys
+	chmod 777 -R /root/libarys
+	cd /root/libarys
 
 	cd BPI-WiringPi
 	./build
@@ -257,10 +287,10 @@ clone_repositorys() {
 
 	cd RPi.GPIO
 	groupadd -f -r gpio
-cat <<EOF >> '/etc/udev/rules.d/99-gpio.rules','w'
-SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
-SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
-SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value'"
+	cat <<EOF >> '/etc/udev/rules.d/99-gpio.rules','w'
+	SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
+    SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
+	SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown root:gpio /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value ; chmod 660 /sys%p/active_low /sys%p/direction /sys%p/edge /sys%p/value'"
 EOF
 	udevadm control --reload-rules
 	udevadm trigger
@@ -271,7 +301,7 @@ EOF
 		python setup.py install
 	else
 	    echo "Python is not available"
-
+		continue
 	fi
 	if which python2 &> /dev/null
 	then
@@ -279,7 +309,7 @@ EOF
 		python2 setup.py install
 	else
 	    echo "Python2 is not available"
-
+		continue
 	fi
 
 
@@ -294,7 +324,7 @@ build() {
 
     install "default";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
@@ -309,11 +339,11 @@ build_xenial() {
 	# install "default"
 	install "ubuntu" "xenial";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_bionic() {
@@ -322,11 +352,11 @@ build_bionic() {
 	# install "default"
 	install "ubuntu" "bionic";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_focal() {
@@ -335,11 +365,11 @@ build_focal() {
 	# install "default"
 	install "ubuntu" "focal";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 
 }
 
@@ -349,11 +379,11 @@ build_jammy() {
 	# install "default"
 	install "ubuntu" "jammy";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 
 }
 
@@ -363,11 +393,11 @@ build_noble() {
 	# install "default"
 	install "ubuntu" "noble";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_ubuntu
+	install_docker_ubuntu
 }
 
 build_stretch() {
@@ -376,11 +406,11 @@ build_stretch() {
 	# install "default"
 	install "debian" "stretch";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_buster() {
@@ -389,11 +419,11 @@ build_buster() {
 	# install "default"
 	install "debian" "buster";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_bullseye() {
@@ -408,11 +438,11 @@ build_bullseye() {
 	# install "default"
 	install "debian" "bullseye";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 
@@ -423,11 +453,11 @@ build_bookworm() {
 	install "debian" "bookworm";
 
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 }
 
 build_trixie() {
@@ -436,11 +466,11 @@ build_trixie() {
 	# install "default"
 	install "debian" "trixie";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 
@@ -450,11 +480,11 @@ build_sid() {
 	# install "default"
 	install "debian" "sid";
 
-	#copy_overlay;
+	copy_overlay;
 	board_determiner
 	clone_repositorys;
 
-	#install_docker_debian
+	install_docker_debian
 
 }
 
